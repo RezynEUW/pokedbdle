@@ -1,101 +1,199 @@
-import Image from "next/image";
+// src/app/page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { PokemonDisplay } from "@/components/game/PokemonDisplay";
+import { PokemonAutocomplete } from "@/components/game/PokemonAutocomplete";
+import { GuessHints } from "@/components/game/GuessHints";
+import { DailyStats } from "@/components/game/DailyStats";
+import { compareGuess } from "@/lib/game/gameLogic";
+import type { Pokemon, HintResult, GameStats } from "@/types/game";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [targetPokemon, setTargetPokemon] = useState<Pokemon | null>(null);
+  const [pokemonNames, setPokemonNames] = useState<Pokemon[]>([]);
+  const [hints, setHints] = useState<HintResult[]>([]);
+  const [guesses, setGuesses] = useState<Pokemon[]>([]);
+  const [isRevealed, setIsRevealed] = useState(false);
+  const [guessCount, setGuessCount] = useState(0);
+  const [gameDate, setGameDate] = useState<string | null>(null);
+  const [stats, setStats] = useState<GameStats>({
+    gamesPlayed: 0,
+    gamesWon: 0,
+    currentStreak: 0,
+    maxStreak: 0,
+    guessDistribution: {}
+  });
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const loadGameState = () => {
+      const savedState = localStorage.getItem('pokedbdle_game_state');
+      if (savedState) {
+        const parsedState = JSON.parse(savedState);
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Check if the saved state is for today
+        if (parsedState.date === today) {
+          setHints(parsedState.hints);
+          setGuesses(parsedState.guesses);
+          setIsRevealed(parsedState.isRevealed);
+          setGuessCount(parsedState.guessCount);
+          setGameDate(parsedState.date);
+        }
+      }
+    };
+
+    const fetchDailyPokemon = async () => {
+      try {
+        const response = await fetch('/api/daily');
+        const data = await response.json();
+        setTargetPokemon(data.pokemon);
+        setGameDate(new Date().toISOString().split('T')[0]);
+      } catch (error) {
+        console.error('Error fetching daily pokemon:', error);
+      }
+    };
+
+    const loadStats = () => {
+      const savedStats = localStorage.getItem('pokedbdle_stats');
+      if (savedStats) {
+        setStats(JSON.parse(savedStats));
+      }
+    };
+
+    // Fetch Pokemon names
+    const fetchPokemonNames = async () => {
+      try {
+        const response = await fetch('/api/pokemon-names');
+        const data = await response.json();
+
+        // Debug log to see what we actually get from the API
+        console.log("pokemon-names =>", data);
+
+        // Ensure we got an array before calling setPokemonNames
+        if (!Array.isArray(data)) {
+          console.error("Expected an array from /api/pokemon-names, got:", data);
+          return;
+        }
+
+        setPokemonNames(data);
+      } catch (error) {
+        console.error('Error fetching Pokemon names:', error);
+      }
+    };
+
+    loadStats();
+    loadGameState();
+    fetchDailyPokemon();
+    fetchPokemonNames();
+  }, []);
+
+  // Save game state whenever it changes
+  useEffect(() => {
+    if (targetPokemon && gameDate) {
+      const gameState = {
+        date: gameDate,
+        hints,
+        guesses,
+        isRevealed,
+        guessCount
+      };
+      localStorage.setItem('pokedbdle_game_state', JSON.stringify(gameState));
+    }
+  }, [hints, guesses, isRevealed, guessCount, targetPokemon, gameDate]);
+
+  const saveStats = (newStats: GameStats) => {
+    localStorage.setItem('pokedbdle_stats', JSON.stringify(newStats));
+    setStats(newStats);
+  };
+
+  const handleGuess = async (guessName: string) => {
+    if (!targetPokemon) return;
+
+    try {
+      const response = await fetch(`/api/guess?name=${encodeURIComponent(guessName)}`);
+      const guessPokemon: Pokemon = await response.json();
+      
+      const result = compareGuess(guessPokemon, targetPokemon);
+      
+      // Ensure hints is always an array
+      const newHints = Array.isArray(result.hints) ? result.hints : [];
+      
+      // Update guesses and hints
+      setGuesses(prev => {
+        const currentGuesses = Array.isArray(prev) ? prev : [];
+        return [...currentGuesses, guessPokemon];
+      });
+
+      setHints(prev => {
+        const currentHints = Array.isArray(prev) ? prev : [];
+        return [...currentHints, ...newHints];
+      });
+
+      setGuessCount(prev => (prev || 0) + 1);
+
+      if (result.isCorrect) {
+        handleWin();
+      }
+    } catch (error) {
+      console.error('Error processing guess:', error);
+    }
+  };
+
+  const handleWin = () => {
+    setIsRevealed(true);
+    const newStats = {
+      ...stats,
+      gamesPlayed: stats.gamesPlayed + 1,
+      gamesWon: stats.gamesWon + 1,
+      currentStreak: stats.currentStreak + 1,
+      maxStreak: Math.max(stats.maxStreak, stats.currentStreak + 1),
+      guessDistribution: {
+        ...stats.guessDistribution,
+        [guessCount]: (stats.guessDistribution[guessCount] || 0) + 1
+      }
+    };
+    saveStats(newStats);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 flex flex-col items-center">
+      <div className="w-full max-w-4xl px-4 py-8">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-center text-blue-800 drop-shadow-md">
+            PokéDBDle
+          </h1>
+        </header>
+
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="grid md:grid-cols-2 gap-6 p-6">
+            <div className="space-y-6">
+              <PokemonDisplay 
+                sprite={targetPokemon?.sprite_official} 
+                isRevealed={isRevealed}
+                className="mx-auto"
+              />
+              <PokemonAutocomplete 
+                pokemonNames={pokemonNames}
+                onGuess={handleGuess}
+                disabled={isRevealed}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="space-y-6">
+              <GuessHints 
+                guesses={guesses} 
+                className="border rounded-lg overflow-hidden"
+              />
+              <DailyStats 
+                stats={stats} 
+                className="bg-gray-50 rounded-lg p-4"
+              />
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
