@@ -1,13 +1,17 @@
 // next.config.ts
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   images: {
     domains: [
       'raw.githubusercontent.com',
       'assets.pokemon.com',
       'upload.wikimedia.org'
     ]
+  },
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL
   }
 };
 
-module.exports = nextConfig;
+export default nextConfig;
