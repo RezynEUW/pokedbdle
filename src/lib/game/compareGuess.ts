@@ -14,77 +14,97 @@ export type ComparisonResults = {
 };
 
 function getNumericHint(guessValue: number, targetValue: number): ' ↑' | ' ↓' {
-    return guessValue > targetValue ? ' ↓' : ' ↑';
-  }
+  return guessValue > targetValue ? ' ↓' : ' ↑';
+}
 
-// Helper to format evolution stage (e.g., "stage1" -> "Stage 1")
-function formatEvolutionStage(stage: string): string {
-  // If the stage string starts with "stage" (case insensitive), add a space
-  if (stage.toLowerCase().startsWith('stage')) {
-    const numberPart = stage.slice(5);
-    return `Stage ${numberPart}`;
-  }
-  return stage;
+function compareArrays(array1: string[] = [], array2: string[] = []): {
+  isCorrect: boolean;
+  isPartiallyCorrect: boolean;
+} {
+  const normalized1 = array1.map(item => item?.toLowerCase()).filter(Boolean);
+  const normalized2 = array2.map(item => item?.toLowerCase()).filter(Boolean);
+
+  const hasAllItems = normalized1.length === normalized2.length &&
+    normalized1.every(item => normalized2.includes(item));
+  
+  const hasAnyItem = normalized1.some(item => normalized2.includes(item));
+
+  return {
+    isCorrect: hasAllItems,
+    isPartiallyCorrect: !hasAllItems && hasAnyItem
+  };
 }
 
 export function compareGuess(guess: Pokemon, target: Pokemon): ComparisonResults {
+  const statComparison = compareArrays(
+    guess?.highest_stats || [], 
+    target?.highest_stats || []
+  );
+
+  const abilityComparison = compareArrays(
+    guess?.abilities || [], 
+    target?.abilities || []
+  );
+
+  const typeComparison = compareArrays(
+    guess?.types || [], 
+    target?.types || []
+  );
+
   return {
     generation: {
       category: 'Generation',
-      value: guess.generation,
+      value: guess.generation || '-',
       isCorrect: guess.generation === target.generation
     },
     types: {
       category: 'Types',
-      value: guess.types.join('/'),
-      isCorrect: areArraysEqual(guess.types, target.types),
-      isPartiallyCorrect: hasCommonType(guess.types, target.types)
+      value: (guess?.types || []).join('/') || '-',
+      isCorrect: typeComparison.isCorrect,
+      isPartiallyCorrect: typeComparison.isPartiallyCorrect
     },
     color: {
       category: 'Color',
-      value: guess.color,
+      value: guess.color || '-',
       isCorrect: guess.color === target.color
     },
     evolution: {
       category: 'Evolution Stage',
-      value: formatEvolutionStage(guess.evolution_stage),
+      value: guess.evolution_stage ? guess.evolution_stage.replace('stage', 'Stage ') : '-',
       isCorrect: guess.evolution_stage === target.evolution_stage
     },
     height: {
       category: 'Height',
-      value: `${(guess.height / 10).toFixed(1)}m`,
+      value: guess.height ? `${(guess.height / 10).toFixed(1)}m` : '-',
       isCorrect: guess.height === target.height,
-      hint: guess.height > target.height ? ' ↓' : ' ↑'
+      hint: guess.height !== target.height ? getNumericHint(guess.height, target.height) : undefined
     },
     weight: {
       category: 'Weight',
-      value: `${(guess.weight / 10).toFixed(1)}kg`,
+      value: guess.weight ? `${(guess.weight / 10).toFixed(1)}kg` : '-',
       isCorrect: guess.weight === target.weight,
-      hint: guess.weight > target.weight ? ' ↓' : ' ↑'
+      hint: guess.weight !== target.weight ? getNumericHint(guess.weight, target.weight) : undefined
     },
     bst: {
-        category: 'BST',
-        value: guess.base_stat_total.toString(),
-        isCorrect: guess.base_stat_total === target.base_stat_total,
-        hint: guess.base_stat_total !== target.base_stat_total 
-          ? getNumericHint(guess.base_stat_total, target.base_stat_total)
-          : undefined
-      },
+      category: 'BST',
+      value: guess.base_stat_total?.toString() || '-',
+      isCorrect: guess.base_stat_total === target.base_stat_total,
+      hint: guess.base_stat_total !== target.base_stat_total ? 
+        getNumericHint(guess.base_stat_total, target.base_stat_total) : undefined
+    },
+    abilities: {
+      category: 'Abilities',
+      value: (guess?.abilities || []).join(', ') || '-',
+      isCorrect: abilityComparison.isCorrect,
+      isPartiallyCorrect: abilityComparison.isPartiallyCorrect
+    },
     highestStat: {
       category: 'Highest Stat',
-      value: guess.highest_stat || '-',
-      isCorrect: guess.highest_stat === target.highest_stat
+      value: (guess?.highest_stats || []).join(', ') || '-',
+      isCorrect: statComparison.isCorrect,
+      isPartiallyCorrect: statComparison.isPartiallyCorrect
     }
   };
-}
-
-function areArraysEqual(arr1: string[], arr2: string[]): boolean {
-  return arr1.length === arr2.length &&
-         arr1.every(type => arr2.includes(type));
-}
-
-function hasCommonType(types1: string[], types2: string[]): boolean {
-  return types1.some(type => types2.includes(type));
 }
 
 export default compareGuess;

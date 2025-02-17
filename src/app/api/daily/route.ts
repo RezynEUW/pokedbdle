@@ -8,6 +8,14 @@ export async function GET() {
     const today = new Date().toISOString().split('T')[0];
     
     let dailyPokemon = await sql`
+      WITH highest_stats AS (
+        SELECT 
+          pokemon_id,
+          array_agg(stat_name ORDER BY stat_name) as highest_stats
+        FROM pokemon_stats 
+        WHERE is_highest = true
+        GROUP BY pokemon_id
+      )
       SELECT 
         p.id, 
         p.name, 
@@ -16,13 +24,19 @@ export async function GET() {
         p.evolution_stage,
         p.height,
         p.weight,
+        p.base_stat_total,
         p.sprite_official,
-        array_agg(DISTINCT pt.type_name) as types
+        p.sprite_default,
+        array_agg(DISTINCT pt.type_name) as types,
+        array_agg(DISTINCT pa.ability_name) as abilities,
+        COALESCE(hs.highest_stats, ARRAY[]::text[]) as highest_stats
       FROM daily_pokemon dp
       JOIN pokemon p ON dp.pokemon_id = p.id
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
+      LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
+      LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
       WHERE dp.date = ${today}
-      GROUP BY p.id
+      GROUP BY p.id, hs.highest_stats
     `;
 
     if (!dailyPokemon.length) {
@@ -32,7 +46,16 @@ export async function GET() {
         ORDER BY RANDOM()
         LIMIT 1
       `;
+      
       dailyPokemon = await sql`
+        WITH highest_stats AS (
+          SELECT 
+            pokemon_id,
+            array_agg(stat_name ORDER BY stat_name) as highest_stats
+          FROM pokemon_stats 
+          WHERE is_highest = true
+          GROUP BY pokemon_id
+        )
         SELECT 
           p.id, 
           p.name, 
@@ -41,15 +64,23 @@ export async function GET() {
           p.evolution_stage,
           p.height,
           p.weight,
+          p.base_stat_total,
           p.sprite_official,
-          array_agg(DISTINCT pt.type_name) as types
+          p.sprite_default,
+          array_agg(DISTINCT pt.type_name) as types,
+          array_agg(DISTINCT pa.ability_name) as abilities,
+          COALESCE(hs.highest_stats, ARRAY[]::text[]) as highest_stats
         FROM daily_pokemon dp
         JOIN pokemon p ON dp.pokemon_id = p.id
         LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
+        LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
+        LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
         WHERE dp.date = ${today}
-        GROUP BY p.id
+        GROUP BY p.id, hs.highest_stats
       `;
     }
+
+    console.log('Daily Pokemon data:', dailyPokemon[0]); // Debug log
 
     return NextResponse.json({ pokemon: dailyPokemon[0] });
   } catch (error) {

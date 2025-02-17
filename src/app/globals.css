@@ -1,3 +1,4 @@
+/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,31 +22,44 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.grid-container {
-  display: grid;
-  grid-template-columns: 80px repeat(8, 1fr);
-  gap: 8px;
-  margin: 10px 0;
+.main-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
-.pokemon-card {
-  width: 100%;
-  padding: 8px;
-  background-color: var(--card-bg);
-  border: 2px solid var(--card-border);
-  border-radius: 8px;
-  text-align: center;
+.guesses-container {
+  width: 90%;
+  max-width: 1400px;
+  margin: 20px auto;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: 80px repeat(9, 1fr);
+  gap: 8px;
   align-items: center;
-  justify-content: center;
-  min-height: 80px;
+  min-height: 64px;
+}
+
+.column-headers {
+  display: grid;
+  grid-template-columns: 80px repeat(9, 1fr);
+  gap: 8px;
+  padding: 8px 0;
+  background-color: #1a1a1a;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .pokemon-sprite {
   background: white;
   border-radius: 8px;
-  padding: 8px;
+  padding: 4px;
   width: 64px;
   height: 64px;
   display: flex;
@@ -60,37 +74,39 @@ body {
 }
 
 .stat-card {
-  width: 100%;
-  padding: 8px;
+  background-color: var(--card-bg);
   border: 2px solid var(--card-border);
   border-radius: 8px;
+  padding: 8px;
+  min-height: 64px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
+  text-align: center;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.header-cell {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #888;
+  padding: 4px;
 }
 
 .stat-card.correct {
   background-color: var(--correct);
-}
-
-.stat-card.incorrect {
-  background-color: var(--incorrect);
+  color: #000000;
 }
 
 .stat-card.partial {
   background-color: var(--partial);
+  color: #000000;
 }
 
-.stat-label {
-  font-size: 0.8em;
-  opacity: 0.8;
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-weight: 600;
+.stat-card.incorrect {
+  background-color: var(--incorrect);
+  color: #000000;
 }
 
 .header {
@@ -111,6 +127,22 @@ body {
   gap: 8px;
 }
 
+.search-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  background: white;
+  color: black;
+  margin-bottom: 16px;
+}
+
+/* Remove scrollbars */
+.grid-container, .column-headers {
+  overflow: visible;
+}
+
+/* Button styles */
 .button {
   background: white;
   color: black;
@@ -124,76 +156,107 @@ body {
   opacity: 0.9;
 }
 
+/* Add these to your globals.css */
+
+.search-container {
+  position: relative;
+  width: 300px;
+  margin: 0 auto;
+  z-index: 50;
+}
+
 .search-input {
   width: 100%;
-  padding: 12px;
+  padding: 8px 12px;
   border: 2px solid var(--card-border);
   border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #4a9eff;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pokemon-suggestion-sprite {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
   background: white;
-  color: black;
-  margin-bottom: 16px;
-}
-
-.main-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-.stat-column {
-  display: flex;
-  flex-direction: column;
-  min-width: 100px;
-  border: 1px solid #333;
   border-radius: 4px;
-  overflow: hidden;
+  padding: 2px;
 }
 
-.stat-label {
-  padding: 4px;
-  font-size: 12px;
-  text-align: center;
-  background-color: #222;
-  border-bottom: 1px solid #333;
+.pokemon-suggestion-name {
+  color: var(--text);
+  font-size: 0.9rem;
+  text-transform: capitalize;
 }
 
-.stat-value {
-  padding: 8px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 500;
+.loading-spinner {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-.result-correct {
-  background-color: rgb(74, 222, 128); /* green */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: #4a9eff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.result-partial {
-  background-color: rgb(250, 204, 21); /* yellow */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.result-incorrect {
-  background-color: rgb(248, 113, 113); /* red */
+/* Scrollbar styling */
+.suggestions-list::-webkit-scrollbar {
+  width: 8px;
 }
 
-.guesses-container {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
+.suggestions-list::-webkit-scrollbar-track {
+  background: var(--card-bg);
 }
 
-.column-headers {
-  display: grid;
-  grid-template-columns: 80px repeat(8, 1fr);
-  gap: 8px;
-  padding: 8px;
-  background-color: #1a1a1a;
-  border-bottom: 1px solid #333;
-  margin-bottom: 8px;
+.suggestions-list::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
 }
 
-.header-cell {
-  text-align: center;
-  font-size: 14px;
-  color: #888;
+.suggestions-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
