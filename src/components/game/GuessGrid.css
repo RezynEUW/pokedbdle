@@ -1,0 +1,79 @@
+/* src/components/game/GuessGrid.css */
+.guesses-container {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .column-headers {
+    display: grid;
+    grid-template-columns: 80px repeat(9, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .header-cell {
+    text-align: center;
+    font-weight: bold;
+    color: #888;
+  }
+  
+  .grid-container {
+    display: grid;
+    grid-template-columns: 80px repeat(9, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .pokemon-sprite {
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .pokemon-sprite img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  
+  .stat-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+  }
+  
+  .type-icons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .type-icon {
+    width: 103px;
+    height: 25px;
+    object-fit: contain;
+  }
+  
+  .correct {
+    background-color: #4ade80;
+  }
+  
+  .incorrect {
+    background-color: #f87171;
+  }
+  
+  .partial {
+    background-color: #facc15;
+  }
+  
+  .hint {
+    margin-left: 4px;
+    font-weight: bold;
+  }

@@ -1,4 +1,3 @@
-// src/lib/game/compareGuess.ts
 import { Pokemon } from '@/types/pokemon';
 
 export interface ComparisonResult {
@@ -36,9 +35,9 @@ function compareArrays(array1: string[] = [], array2: string[] = []): {
 }
 
 export function compareGuess(guess: Pokemon, target: Pokemon): ComparisonResults {
-  const statComparison = compareArrays(
-    guess?.highest_stats || [], 
-    target?.highest_stats || []
+  const eggGroupComparison = compareArrays(
+    guess?.egg_groups || [], 
+    target?.egg_groups || []
   );
 
   const abilityComparison = compareArrays(
@@ -49,6 +48,11 @@ export function compareGuess(guess: Pokemon, target: Pokemon): ComparisonResults
   const typeComparison = compareArrays(
     guess?.types || [], 
     target?.types || []
+  );
+
+  const highestStatComparison = compareArrays(
+    guess?.highest_stats || [], 
+    target?.highest_stats || []
   );
 
   return {
@@ -92,17 +96,23 @@ export function compareGuess(guess: Pokemon, target: Pokemon): ComparisonResults
       hint: guess.base_stat_total !== target.base_stat_total ? 
         getNumericHint(guess.base_stat_total, target.base_stat_total) : undefined
     },
+    highestStat: {
+        category: 'Highest Stat',
+        value: (guess?.highest_stats || []).join(', ') || '-',
+        isCorrect: highestStatComparison.isCorrect,
+        isPartiallyCorrect: highestStatComparison.isPartiallyCorrect
+      },
     abilities: {
       category: 'Abilities',
       value: (guess?.abilities || []).join(', ') || '-',
       isCorrect: abilityComparison.isCorrect,
       isPartiallyCorrect: abilityComparison.isPartiallyCorrect
     },
-    highestStat: {
-      category: 'Highest Stat',
-      value: (guess?.highest_stats || []).join(', ') || '-',
-      isCorrect: statComparison.isCorrect,
-      isPartiallyCorrect: statComparison.isPartiallyCorrect
+    eggGroups: {
+      category: 'Egg Groups',
+      value: (guess?.egg_groups || []).join(', ') || '-',
+      isCorrect: eggGroupComparison.isCorrect,
+      isPartiallyCorrect: eggGroupComparison.isPartiallyCorrect
     }
   };
 }

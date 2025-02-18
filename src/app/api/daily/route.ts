@@ -1,4 +1,3 @@
-// src/app/api/daily/route.ts
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 
@@ -29,11 +28,13 @@ export async function GET() {
         p.sprite_default,
         array_agg(DISTINCT pt.type_name) as types,
         array_agg(DISTINCT pa.ability_name) as abilities,
+        array_agg(DISTINCT peg.egg_group_name) as egg_groups,
         COALESCE(hs.highest_stats, ARRAY[]::text[]) as highest_stats
       FROM daily_pokemon dp
       JOIN pokemon p ON dp.pokemon_id = p.id
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
       LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
+      LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
       LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
       WHERE dp.date = ${today}
       GROUP BY p.id, hs.highest_stats
@@ -69,11 +70,13 @@ export async function GET() {
           p.sprite_default,
           array_agg(DISTINCT pt.type_name) as types,
           array_agg(DISTINCT pa.ability_name) as abilities,
+          array_agg(DISTINCT peg.egg_group_name) as egg_groups,
           COALESCE(hs.highest_stats, ARRAY[]::text[]) as highest_stats
         FROM daily_pokemon dp
         JOIN pokemon p ON dp.pokemon_id = p.id
         LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
         LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
+        LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
         LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
         WHERE dp.date = ${today}
         GROUP BY p.id, hs.highest_stats

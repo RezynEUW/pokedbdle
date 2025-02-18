@@ -3,6 +3,33 @@
 
 import React from 'react';
 import { Pokemon } from '@/types/pokemon';
+import { compareGuess } from '@/lib/game/compareGuess';
+import './GuessGrid.css';
+
+function formatGeneration(gen: string): string {
+  const generationMap: {[key: string]: string} = {
+    'generation-i': 'Gen 1',
+    'generation-ii': 'Gen 2',
+    'generation-iii': 'Gen 3',
+    'generation-iv': 'Gen 4',
+    'generation-v': 'Gen 5',
+    'generation-vi': 'Gen 6',
+    'generation-vii': 'Gen 7',
+    'generation-viii': 'Gen 8',
+    'generation-ix': 'Gen 9'
+  };
+  return generationMap[gen] || gen;
+}
+
+function formatColor(color: string): string {
+  return color.charAt(0).toUpperCase() + color.slice(1);
+}
+
+function formatEggGroup(group: string): string {
+  return group.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+}
 
 interface GuessGridProps {
   guesses: Pokemon[];
@@ -10,36 +37,6 @@ interface GuessGridProps {
 }
 
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
-  const compareTypes = (guessTypes: string[] = [], targetTypes: string[] = []) => {
-    if (!guessTypes || !targetTypes) return { isCorrect: false, isPartial: false };
-    const hasExactMatch = guessTypes.length === targetTypes.length && 
-      guessTypes.every(type => targetTypes.includes(type));
-    const hasPartialMatch = guessTypes.some(type => targetTypes.includes(type));
-    return { isCorrect: hasExactMatch, isPartial: hasPartialMatch };
-  };
-
-  const formatStatName = (stat: string) => {
-    if (!stat) return '';
-    // Convert "special-attack" to "Special Attack", etc.
-    return stat.split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  const compareStats = (guessStats: string[] = [], targetStats: string[] = []) => {
-    const normalizedGuess = (guessStats || []).map(s => s?.toLowerCase()).filter(Boolean);
-    const normalizedTarget = (targetStats || []).map(s => s?.toLowerCase()).filter(Boolean);
-
-    const hasExactMatch = normalizedGuess.length === normalizedTarget.length &&
-      normalizedGuess.every(stat => normalizedTarget.includes(stat));
-    const hasPartialMatch = normalizedGuess.some(stat => normalizedTarget.includes(stat));
-
-    return { 
-      isCorrect: hasExactMatch,
-      isPartial: !hasExactMatch && hasPartialMatch
-    };
-  };
-
   const displayGuesses = [...guesses].reverse();
 
   return (
@@ -53,14 +50,12 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
         <div className="header-cell">Height</div>
         <div className="header-cell">Weight</div>
         <div className="header-cell">BST</div>
-        <div className="header-cell">Highest Stat</div>
+        <div className="header-cell">Egg Groups</div>
         <div className="header-cell">Ability</div>
       </div>
 
       {displayGuesses.map((guess, index) => {
-        const typeComparison = compareTypes(guess?.types || [], target?.types || []);
-        const statComparison = compareStats(guess?.highest_stats || [], target?.highest_stats || []);
-        const abilityComparison = compareStats(guess?.abilities || [], target?.abilities || []);
+        const comparisonResults = compareGuess(guess, target);
         
         return (
           <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
@@ -71,58 +66,69 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
               />
             </div>
 
-            <div className={`stat-card ${typeComparison.isCorrect ? 'correct' : 
-              typeComparison.isPartial ? 'partial' : 'incorrect'}`}>
-              {(guess?.types || []).join('/')}
+            <div className={`stat-card ${
+              comparisonResults.types.isCorrect ? 'correct' : 
+              comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
+            }`}>
+              <div className="type-icons">
+                {(guess?.types || []).map((type: string) => (
+                  <img 
+                    key={type} 
+                    src={`/icons/${type.charAt(0).toUpperCase() + type.slice(1)}.png`} 
+                    alt={type} 
+                    className="type-icon"
+                    width="70"
+                    height="17"
+                  />
+                ))}
+              </div>
             </div>
 
-            <div className={`stat-card ${guess?.generation === target?.generation ? 'correct' : 'incorrect'}`}>
-              {guess?.generation || '-'}
+            <div className={`stat-card ${comparisonResults.generation.isCorrect ? 'correct' : 'incorrect'}`}>
+              {formatGeneration(guess?.generation || '-')}
             </div>
 
-            <div className={`stat-card ${guess?.color === target?.color ? 'correct' : 'incorrect'}`}>
-              {guess?.color || '-'}
+            <div className={`stat-card ${comparisonResults.color.isCorrect ? 'correct' : 'incorrect'}`}>
+              {formatColor(guess?.color || '-')}
             </div>
 
-            <div className={`stat-card ${guess?.evolution_stage === target?.evolution_stage ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${comparisonResults.evolution.isCorrect ? 'correct' : 'incorrect'}`}>
               {guess?.evolution_stage ? guess.evolution_stage.replace('stage', 'Stage ') : '-'}
             </div>
 
-            <div className={`stat-card ${guess?.height === target?.height ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${comparisonResults.height.isCorrect ? 'correct' : 'incorrect'}`}>
               {guess?.height ? `${(guess.height / 10).toFixed(1)}m` : '-'}
-              {guess?.height !== target?.height && guess?.height && target?.height && (
-                <span className="ml-1">{guess.height > target.height ? '↓' : '↑'}</span>
-              )}
+              {comparisonResults.height.hint && <span className="hint">{comparisonResults.height.hint}</span>}
             </div>
 
-            <div className={`stat-card ${guess?.weight === target?.weight ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${comparisonResults.weight.isCorrect ? 'correct' : 'incorrect'}`}>
               {guess?.weight ? `${(guess.weight / 10).toFixed(1)}kg` : '-'}
-              {guess?.weight !== target?.weight && guess?.weight && target?.weight && (
-                <span className="ml-1">{guess.weight > target.weight ? '↓' : '↑'}</span>
-              )}
+              {comparisonResults.weight.hint && <span className="hint">{comparisonResults.weight.hint}</span>}
             </div>
 
-            <div className={`stat-card ${guess?.base_stat_total === target?.base_stat_total ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${comparisonResults.bst.isCorrect ? 'correct' : 'incorrect'}`}>
               {guess?.base_stat_total || '-'}
-              {guess?.base_stat_total !== target?.base_stat_total && guess?.base_stat_total && target?.base_stat_total && (
-                <span className="ml-1">
-                  {guess.base_stat_total > target.base_stat_total ? '↓' : '↑'}
-                </span>
-              )}
+              {comparisonResults.bst.hint && <span className="hint">{comparisonResults.bst.hint}</span>}
             </div>
 
             <div className={`stat-card ${
-              statComparison.isCorrect ? 'correct' : 
-              statComparison.isPartial ? 'partial' : 'incorrect'
+              comparisonResults.eggGroups.isCorrect ? 'correct' : 
+              comparisonResults.eggGroups.isPartiallyCorrect ? 'partial' : 'incorrect'
             }`}>
-              {(guess?.highest_stats || []).map(formatStatName).filter(Boolean).join(', ') || '-'}
+              {(guess?.egg_groups || []).map(formatEggGroup).join(', ') || '-'}
             </div>
 
             <div className={`stat-card ${
-              abilityComparison.isCorrect ? 'correct' : 
-              abilityComparison.isPartial ? 'partial' : 'incorrect'
+              comparisonResults.abilities.isCorrect ? 'correct' : 
+              comparisonResults.abilities.isPartiallyCorrect ? 'partial' : 'incorrect'
             }`}>
-              {(guess?.abilities || []).join(', ') || '-'}
+              {(guess?.abilities || [])
+                .map((ability: string) => 
+                  ability.split('-')
+                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
+                )
+                .join(', ') || '-'}
             </div>
           </div>
         );
