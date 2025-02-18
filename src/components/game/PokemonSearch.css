@@ -1,0 +1,156 @@
+/* Pokemon Search Styles */
+.search-container {
+    position: relative;
+    width: 300px;
+    margin: 0 auto;
+    z-index: 50;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 12px 16px;
+    padding-right: 0px;
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .search-input:focus {
+    border-color: #4a9eff;
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .search-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .suggestions-list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    transform-origin: top center;
+    animation: slideDown 0.2s ease-out;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .suggestion-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .suggestion-item:last-child {
+    border-bottom: none;
+  }
+  
+  .suggestion-item:hover {
+    background-color: rgba(74, 158, 255, 0.1);
+    transform: translateX(0px);
+  }
+  
+  .pokemon-suggestion-sprite {
+    width: 48px;
+    height: 48px;
+    margin-right: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    transition: transform 0.2s ease;
+  }
+  
+  .suggestion-item:hover .pokemon-suggestion-sprite {
+    transform: scale(1.1);
+  }
+  
+  .pokemon-suggestion-name {
+    color: var(--text);
+    font-size: 1rem;
+    text-transform: capitalize;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  
+  .loading-spinner {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(74, 158, 255, 0.1);
+    border-top-color: #4a9eff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  /* Custom Scrollbar */
+  .suggestions-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .suggestions-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .suggestions-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    border: 2px solid var(--card-bg);
+  }
+  
+  .suggestions-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Add a subtle glow effect when searching */
+  .search-container.is-loading .search-input {
+    border-color: #4a9eff;
+    box-shadow: 0 0 0 4px rgba(74, 158, 255, 0.1);
+  }
+  
+  /* Empty state styling */
+  .suggestions-list:empty::after {
+    content: "No Pokémon found";
+    display: block;
+    padding: 16px;
+    text-align: center;
+    color: var(--text);
+    opacity: 0.6;
+  }

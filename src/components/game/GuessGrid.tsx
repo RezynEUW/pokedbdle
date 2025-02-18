@@ -1,13 +1,12 @@
-// src/components/game/GuessGrid.tsx
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pokemon } from '@/types/pokemon';
 import { compareGuess } from '@/lib/game/compareGuess';
 import './GuessGrid.css';
 
 function formatGeneration(gen: string): string {
-  const generationMap: {[key: string]: string} = {
+  const generationMap: { [key: string]: string } = {
     'generation-i': 'Gen 1',
     'generation-ii': 'Gen 2',
     'generation-iii': 'Gen 3',
@@ -26,9 +25,10 @@ function formatColor(color: string): string {
 }
 
 function formatEggGroup(group: string): string {
-  return group.split('-').map(word => 
-    word.charAt(0).toUpperCase() + word.slice(1)
-  ).join(' ');
+  return group
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 interface GuessGridProps {
@@ -37,7 +37,22 @@ interface GuessGridProps {
 }
 
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
-  const displayGuesses = [...guesses].reverse();
+  const [displayGuesses, setDisplayGuesses] = useState<Pokemon[]>([]);
+  const reversedGuesses = [...guesses].reverse();
+
+  // Update displayGuesses whenever guesses changes
+  useEffect(() => {
+    // If this is the first load
+    if (displayGuesses.length === 0 && guesses.length > 0) {
+      setDisplayGuesses(reversedGuesses);
+      return;
+    }
+
+    // If a new guess was added
+    if (guesses.length > displayGuesses.length) {
+      setDisplayGuesses(reversedGuesses);
+    }
+  }, [guesses, displayGuesses.length]);
 
   return (
     <div className="guesses-container">
@@ -66,7 +81,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
               />
             </div>
 
-            <div className={`stat-card ${
+            <div className={`stat-card type-card ${
               comparisonResults.types.isCorrect ? 'correct' : 
               comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
             }`}>
@@ -112,19 +127,20 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
             </div>
 
             <div className={`stat-card ${
-              comparisonResults.eggGroups.isCorrect ? 'correct' : 
-              comparisonResults.eggGroups.isPartiallyCorrect ? 'partial' : 'incorrect'
+              comparisonResults.eggGroups?.isCorrect ? 'correct' : 
+              comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
             }`}>
               {(guess?.egg_groups || []).map(formatEggGroup).join(', ') || '-'}
             </div>
 
             <div className={`stat-card ${
-              comparisonResults.abilities.isCorrect ? 'correct' : 
-              comparisonResults.abilities.isPartiallyCorrect ? 'partial' : 'incorrect'
+              comparisonResults.abilities?.isCorrect ? 'correct' : 
+              comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
             }`}>
               {(guess?.abilities || [])
                 .map((ability: string) => 
-                  ability.split('-')
+                  ability
+                    .split('-')
                     .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ')
                 )

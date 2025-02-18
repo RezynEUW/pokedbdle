@@ -1,8 +1,8 @@
-// src/components/game/PokemonSearch.tsx
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Pokemon } from '@/types/pokemon';
+import './PokemonSearch.css';
 
 interface PokemonSearchProps {
   onSelect: (pokemon: Pokemon) => void;
@@ -60,7 +60,7 @@ export function PokemonSearch({ onSelect, disabled = false }: PokemonSearchProps
   };
 
   return (
-    <div ref={searchContainerRef} className="search-container">
+    <div ref={searchContainerRef} className={`search-container ${isLoading ? 'is-loading' : ''}`}>
       <input
         type="text"
         value={query}
@@ -72,9 +72,9 @@ export function PokemonSearch({ onSelect, disabled = false }: PokemonSearchProps
       />
 
       {showSuggestions && suggestions.length > 0 && (
-        <ul className="suggestions-list">
+        <div className="suggestions-list">
           {suggestions.map((pokemon) => (
-            <li
+            <div
               key={`${pokemon.id}-${pokemon.name}`}
               onClick={() => handleSelect(pokemon)}
               className="suggestion-item"
@@ -85,9 +85,9 @@ export function PokemonSearch({ onSelect, disabled = false }: PokemonSearchProps
                 className="pokemon-suggestion-sprite"
               />
               <span className="pokemon-suggestion-name">{pokemon.name}</span>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       {isLoading && (
