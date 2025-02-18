@@ -15,4 +15,5 @@ export interface Pokemon {
     habitat: string;
     sprite_default: string;
     sprite_official: string;
+    sprite_shiny: string;  // Add this line
   }

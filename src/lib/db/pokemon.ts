@@ -59,7 +59,8 @@ export async function searchPokemon(query: string, limit = 10): Promise<Pokemon[
     egg_groups: [],
     habitat: '',
     sprite_default: p.sprite_default,
-    sprite_official: p.sprite_official
+    sprite_official: p.sprite_official,
+    sprite_shiny: p.sprite_shiny  // Add this line
   }));
 }
 
@@ -121,6 +122,7 @@ export async function getPokemonById(id: number): Promise<Pokemon | null> {
     egg_groups: [],
     habitat: '',
     sprite_default: result.sprite_default,
-    sprite_official: result.sprite_official
+    sprite_official: result.sprite_official,
+    sprite_shiny: result.sprite_shiny  // Add this line
   };
 }

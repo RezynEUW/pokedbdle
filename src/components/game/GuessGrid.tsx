@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Pokemon } from '@/types/pokemon';
 import { compareGuess } from '@/lib/game/compareGuess';
 import './GuessGrid.css';
@@ -39,9 +39,81 @@ interface GuessGridProps {
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   const [displayGuesses, setDisplayGuesses] = useState<Pokemon[]>([]);
   const reversedGuesses = [...guesses].reverse();
+  const correctSound = useRef<HTMLAudioElement | null>(null);
+  const wrongSound = useRef<HTMLAudioElement | null>(null);
+  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
-  // Update displayGuesses whenever guesses changes
   useEffect(() => {
+    // Initialize audio elements
+    correctSound.current = new Audio('/sfx/ding.mp3');
+    wrongSound.current = new Audio('/sfx/ding.mp3');
+    
+    if (correctSound.current) {
+      correctSound.current.volume = 0.3;
+      correctSound.current.preload = 'auto';
+    }
+    if (wrongSound.current) {
+      wrongSound.current.volume = 0;
+      wrongSound.current.preload = 'auto';
+    }
+
+    // Load sounds
+    const loadSounds = async () => {
+      try {
+        if (correctSound.current) {
+          await correctSound.current.load();
+          console.log('Correct sound loaded');
+        }
+        if (wrongSound.current) {
+          await wrongSound.current.load();
+          console.log('Wrong sound loaded');
+        }
+      } catch (error) {
+        console.error('Error loading sounds:', error);
+      }
+    };
+
+    loadSounds();
+
+    // Cleanup function
+    return () => {
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    };
+  }, []);
+
+  // Function to play sound based on card state
+  const playSound = (isCorrect: boolean) => {
+    console.log('Attempting to play sound:', isCorrect ? 'correct' : 'incorrect');
+    try {
+      if (isCorrect && correctSound.current) {
+        console.log('Playing correct sound');
+        correctSound.current.currentTime = 0;
+        const playPromise = correctSound.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log('Error playing correct sound:', error);
+          });
+        }
+      } else if (!isCorrect && wrongSound.current) {
+        console.log('Playing incorrect sound');
+        wrongSound.current.currentTime = 0;
+        const playPromise = wrongSound.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log('Error playing incorrect sound:', error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in playSound:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Clear any existing timeouts
+    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    timeoutsRef.current = [];
+
     // If this is the first load
     if (displayGuesses.length === 0 && guesses.length > 0) {
       setDisplayGuesses(reversedGuesses);
@@ -50,9 +122,37 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
 
     // If a new guess was added
     if (guesses.length > displayGuesses.length) {
+      console.log('New guess detected');
       setDisplayGuesses(reversedGuesses);
+      
+      // Get the latest guess and its comparison results
+      const latestGuess = reversedGuesses[0];
+      const results = compareGuess(latestGuess, target);
+
+      // Schedule sounds for each card reveal
+      const resultArray = [
+        { isCorrect: Boolean(results.types.isCorrect || results.types.isPartiallyCorrect) },
+        { isCorrect: Boolean(results.generation.isCorrect) },
+        { isCorrect: Boolean(results.color.isCorrect) },
+        { isCorrect: Boolean(results.evolution.isCorrect) },
+        { isCorrect: Boolean(results.height.isCorrect) },
+        { isCorrect: Boolean(results.weight.isCorrect) },
+        { isCorrect: Boolean(results.bst.isCorrect) },
+        { isCorrect: Boolean(results.eggGroups?.isCorrect || results.eggGroups?.isPartiallyCorrect) },
+        { isCorrect: Boolean(results.abilities?.isCorrect || results.abilities?.isPartiallyCorrect) }
+      ];
+
+      console.log('Scheduling sounds for results:', resultArray);
+
+      resultArray.forEach((result, index) => {
+        const timeout = setTimeout(() => {
+          console.log(`Playing sound for card ${index + 1}:`, result.isCorrect ? 'correct' : 'incorrect');
+          playSound(result.isCorrect);
+        }, 200 * (index + 1));
+        timeoutsRef.current.push(timeout);
+      });
     }
-  }, [guesses, displayGuesses.length]);
+  }, [guesses.length]);
 
   return (
     <div className="guesses-container">
@@ -73,13 +173,13 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
         const comparisonResults = compareGuess(guess, target);
         
         return (
-          <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
-            <div className="pokemon-sprite">
-              <img 
-                src={guess?.sprite_default || ''} 
-                alt={guess?.name || 'Unknown Pokemon'}
-              />
-            </div>
+            <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
+                <div className="pokemon-sprite">
+                    <img 
+                    src={Math.random() < 0.1 ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default} 
+                    alt={guess?.name || 'Unknown Pokemon'}
+                    />
+                </div>
 
             <div className={`stat-card type-card ${
               comparisonResults.types.isCorrect ? 'correct' : 

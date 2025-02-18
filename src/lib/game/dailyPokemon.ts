@@ -68,23 +68,24 @@ export async function getDailyPokemon(): Promise<Pokemon> {
     `;
 
     return {
-      id: dailyPokemon.id,
-      name: dailyPokemon.name,
-      generation: dailyPokemon.generation,
-      types: dailyPokemon.types || [],
-      color: dailyPokemon.color,
-      evolution_stage: dailyPokemon.evolution_stage,
-      height: dailyPokemon.height,
-      weight: dailyPokemon.weight,
-      base_stat_total: dailyPokemon.base_stat_total,
-      highest_stats: dailyPokemon.highest_stats || [],
-      highest_stat_value: dailyPokemon.highest_stat_value || 0,
-      abilities: dailyPokemon.abilities || [],
-      egg_groups: [],
-      habitat: '',
-      sprite_default: dailyPokemon.sprite_default,
-      sprite_official: dailyPokemon.sprite_official
-    };
+        id: dailyPokemon.id,
+        name: dailyPokemon.name,
+        generation: dailyPokemon.generation,
+        types: dailyPokemon.types || [],
+        color: dailyPokemon.color,
+        evolution_stage: dailyPokemon.evolution_stage,
+        height: dailyPokemon.height,
+        weight: dailyPokemon.weight,
+        base_stat_total: dailyPokemon.base_stat_total,
+        highest_stats: dailyPokemon.highest_stats || [],
+        highest_stat_value: dailyPokemon.highest_stat_value || 0,
+        abilities: dailyPokemon.abilities || [],
+        egg_groups: [],
+        habitat: '',
+        sprite_default: dailyPokemon.sprite_default,
+        sprite_official: dailyPokemon.sprite_official,
+        sprite_shiny: dailyPokemon.sprite_shiny  // Add this line
+      };
   } catch (error) {
     console.error('Error selecting daily Pokemon:', error);
     throw error;

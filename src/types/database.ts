@@ -55,6 +55,7 @@ export async function getPokemonWithStats(name: string): Promise<Pokemon | null>
     egg_groups: result.egg_groups?.filter(Boolean) || [],
     habitat: result.habitat || '',
     sprite_default: result.sprite_default,
-    sprite_official: result.sprite_official
+    sprite_official: result.sprite_official,
+    sprite_shiny: result.string  // Add this line
   };
 }

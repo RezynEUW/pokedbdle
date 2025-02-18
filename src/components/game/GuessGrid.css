@@ -24,37 +24,43 @@
     align-items: center;
 }
 
-/* Add reveal animation classes */
+/* Animation base setup */
 .grid-container > * {
     opacity: 0;
-    transform: translateY(-10px);
-    animation: reveal 0.4s ease forwards;
+    transform: perspective(600px) rotateX(-90deg);
+    transform-origin: top center;
+    animation: flipReveal 0.6s ease forwards;
+    backface-visibility: hidden;
 }
 
-/* Stagger the animation for each column */
+/* Doubled time between each reveal (0.2s instead of 0.1s) */
 .grid-container > *:nth-child(1) { animation-delay: 0s; }
 .grid-container > *:nth-child(2) { animation-delay: 0.2s; }
 .grid-container > *:nth-child(3) { animation-delay: 0.4s; }
 .grid-container > *:nth-child(4) { animation-delay: 0.6s; }
 .grid-container > *:nth-child(5) { animation-delay: 0.8s; }
-.grid-container > *:nth-child(6) { animation-delay: 1s; }
+.grid-container > *:nth-child(6) { animation-delay: 1.0s; }
 .grid-container > *:nth-child(7) { animation-delay: 1.2s; }
 .grid-container > *:nth-child(8) { animation-delay: 1.4s; }
 .grid-container > *:nth-child(9) { animation-delay: 1.6s; }
 .grid-container > *:nth-child(10) { animation-delay: 1.8s; }
 
-@keyframes reveal {
-    from {
+@keyframes flipReveal {
+    0% {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: perspective(600px) rotateX(-90deg);
     }
-    to {
+    50% {
+        opacity: 0.7;
+    }
+    100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: perspective(600px) rotateX(0deg);
     }
 }
 
 .pokemon-sprite {
+    position: relative;
     background: white;
     border-radius: 8px;
     display: flex;
@@ -66,6 +72,16 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+}
+
+.guess-number {
+    position: absolute;
+    left: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-weight: bold;
+    font-size: 1.1rem;
 }
 
 .stat-card {
