@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Pokemon } from '@/types/pokemon';
 import { compareGuess } from '@/lib/game/compareGuess';
 import './GuessGrid.css';
@@ -42,6 +42,21 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   const correctSound = useRef<HTMLAudioElement | null>(null);
   const wrongSound = useRef<HTMLAudioElement | null>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+
+  const dailyShinyId = useMemo(() => {
+    const date = new Date();
+    const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+    
+    // Use the seed to generate a number between 1 and 1025
+    const baseNumber = ((seed * 9301 + 49297) % 233280) % 1025 + 1;
+    
+    // If it happens to be the same as target.id, add 1 (or wrap back to 1)
+    if (baseNumber === target.id) {
+      return baseNumber === 1025 ? 1 : baseNumber + 1;
+    }
+    
+    return baseNumber;
+  }, [target.id]);
 
   useEffect(() => {
     // Initialize audio elements
@@ -176,7 +191,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
             <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
                 <div className="pokemon-sprite">
                     <img 
-                    src={Math.random() < 0.1 ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default} 
+                    src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default} 
                     alt={guess?.name || 'Unknown Pokemon'}
                     />
                 </div>
