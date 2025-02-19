@@ -1,0 +1,22 @@
+/* components/TimeBasedBackground.css */
+.content-container {
+    /* Apply a subtle overlay to ensure content remains readable */
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+    backdrop-filter: blur(3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Ensure text is readable against various backgrounds */
+  .text-content {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  }
+  
+  /* Add this to the main game container */
+  .game-container {
+    position: relative;
+    z-index: 10;
+  }
