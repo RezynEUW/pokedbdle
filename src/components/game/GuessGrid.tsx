@@ -259,7 +259,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
                     .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ')
                 )
-                .join(', ') || '-'}
+                .join(', \n') || '-'}
             </div>
           </div>
         );

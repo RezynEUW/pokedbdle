@@ -1,0 +1,191 @@
+/* src/components/game/GameHeader.css */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 100;
+  }
+  
+  /* Two-column layout with search section containing both search and button */
+  .streak-container {
+    width: 180px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+  
+  .search-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  
+  /* Search controls now have a bit less width to accommodate the button */
+  .search-controls {
+    flex: 1;
+    position: relative;
+  }
+  
+  /* Button styling - close to search but separate */
+  .random-guess-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(30, 30, 60, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.85);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 0;
+    position: relative;
+    flex-shrink: 0;
+  }
+  
+  /* Remove the vertical movement on hover */
+  .random-guess-btn:hover:not(:disabled) {
+    transform: rotate(15deg);
+    background: rgba(74, 222, 128, 0.4);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), 
+                0 0 0 2px rgba(74, 222, 128, 0.2);
+  }
+  
+  .random-guess-btn:active:not(:disabled) {
+    transform: rotate(0deg);
+    background: rgba(74, 222, 128, 0.6);
+  }
+  
+  .random-guess-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: rgba(75, 75, 95, 0.5);
+  }
+  
+  .random-guess-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Counter badge for remaining guesses */
+  .guess-counter {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #4ade80;
+    color: #000;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .streak-counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(30, 30, 60, 0.6);
+    border-radius: 8px;
+    padding: 8px 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .streak-counter::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #4ade80, #facc15);
+    opacity: 0.8;
+  }
+  
+  .streak-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+  
+  .streak-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Enhanced tooltip for disabled random button */
+  .random-guess-btn:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -40px;
+    right: -60px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.9;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 900px) {
+    .game-header {
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+    }
+  
+    .streak-container {
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .search-section {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+  }
+  
+  @media (max-width: 500px) {
+    .search-section {
+      flex-direction: row;
+      max-width: none;
+      gap: 8px;
+    }
+    
+    .search-controls {
+      flex: 1;
+    }
+  }

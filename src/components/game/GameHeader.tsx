@@ -1,97 +1,115 @@
-// src/components/game/GameHeader.tsx
-import React, { useState } from 'react';
-import { HelpIcon, StatsIcon, SettingsIcon } from '@/components/ui/Icons';
-import { HelpModal } from './HelpModal';
-import { GameStatsModal } from './GameStats';
-import { SettingsModal } from './SettingsModal';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { PokemonSearch } from './PokemonSearch';
+import { Pokemon } from '@/types/pokemon';
+import './GameHeader.css';
 
 interface GameHeaderProps {
-  onReset?: () => void;
+  onPokemonSelect: (pokemon: Pokemon) => void;
+  onRandomGuess: () => void;
+  streak: number;
+  guessedPokemon: Pokemon[];
+  disabled?: boolean;
 }
 
-export function GameHeader({ onReset }: GameHeaderProps) {
-  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-
-  // Placeholder for game stats - replace with actual stats from game state
-  const gameStats = {
-    gamesPlayed: 10,
-    gamesWon: 7,
-    currentStreak: 3,
-    maxStreak: 5,
-    guessDistribution: {
-      1: 0,
-      2: 1,
-      3: 2,
-      4: 3,
-      5: 1,
-      6: 0,
-      7: 0,
-      8: 0
-    },
-    lastPlayed: new Date().toISOString()
+const GameHeader: React.FC<GameHeaderProps> = ({
+  onPokemonSelect,
+  onRandomGuess,
+  streak,
+  guessedPokemon,
+  disabled = false
+}) => {
+  const [randomGuessesRemaining, setRandomGuessesRemaining] = useState(5);
+  
+  // Load and track random guesses remaining
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const lastRandomDate = localStorage.getItem('pokedle-last-random-date');
+    let guessesUsed = 0;
+    
+    // Reset counter for a new day
+    if (lastRandomDate !== today) {
+      localStorage.setItem('pokedle-random-guesses-used', '0');
+      localStorage.setItem('pokedle-last-random-date', today);
+    } else {
+      guessesUsed = parseInt(localStorage.getItem('pokedle-random-guesses-used') || '0', 10);
+    }
+    
+    setRandomGuessesRemaining(5 - guessesUsed);
+  }, []);
+  
+  const handleRandomGuess = () => {
+    if (randomGuessesRemaining > 0) {
+      // Update local storage
+      const guessesUsed = parseInt(localStorage.getItem('pokedle-random-guesses-used') || '0', 10) + 1;
+      localStorage.setItem('pokedle-random-guesses-used', guessesUsed.toString());
+      localStorage.setItem('pokedle-last-random-date', new Date().toDateString());
+      
+      // Update state
+      setRandomGuessesRemaining(prev => prev - 1);
+      
+      // Call the original handler
+      onRandomGuess();
+    }
   };
-
+  
+  // Button is disabled if game is disabled or no random guesses remain
+  const isRandomDisabled = disabled || randomGuessesRemaining <= 0;
+  const buttonTitle = randomGuessesRemaining <= 0 
+    ? "You've used all 5 random guesses for today" 
+    : `Random guess (${randomGuessesRemaining} left today)`;
+  
   return (
-    <>
-      <header className="flex justify-between items-center p-4 bg-gray-100">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold text-gray-800">Pokédle</h1>
-          {onReset && (
-            <button 
-              onClick={onReset}
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors"
-            >
-              Reset
-            </button>
-          )}
+    <div className="game-header">
+      <div className="streak-container">
+        <div className="streak-counter">
+          <span className="streak-label">STREAK</span>
+          <span className="streak-value">{streak}</span>
+        </div>
+      </div>
+      
+      <div className="search-section">
+        <div className="search-controls">
+          <PokemonSearch 
+            onSelect={onPokemonSelect} 
+            guessedPokemon={guessedPokemon}
+            disabled={disabled}
+          />
         </div>
         
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => setIsHelpModalOpen(true)}
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label="Help"
+        <button 
+          className="random-guess-btn"
+          onClick={handleRandomGuess}
+          disabled={isRandomDisabled}
+          title={buttonTitle}
+        >
+          {/* Dice icon for random guess */}
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="24" 
+            height="24" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
           >
-            <HelpIcon size={24} />
-          </button>
-          
-          <button 
-            onClick={() => setIsStatsModalOpen(true)}
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label="Statistics"
-          >
-            <StatsIcon size={24} />
-          </button>
-          
-          <button 
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-            aria-label="Settings"
-          >
-            <SettingsIcon size={24} />
-          </button>
-        </div>
-      </header>
-
-      <HelpModal 
-        isOpen={isHelpModalOpen} 
-        onClose={() => setIsHelpModalOpen(false)} 
-      />
-
-      <GameStatsModal 
-        isOpen={isStatsModalOpen} 
-        onClose={() => setIsStatsModalOpen(false)} 
-        stats={gameStats}
-      />
-
-      <SettingsModal 
-        isOpen={isSettingsModalOpen} 
-        onClose={() => setIsSettingsModalOpen(false)} 
-      />
-    </>
+            <rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect>
+            <circle cx="8" cy="8" r="1.5"></circle>
+            <circle cx="16" cy="8" r="1.5"></circle>
+            <circle cx="8" cy="16" r="1.5"></circle>
+            <circle cx="16" cy="16" r="1.5"></circle>
+            <circle cx="12" cy="12" r="1.5"></circle>
+          </svg>
+          {randomGuessesRemaining > 0 && (
+            <span className="guess-counter">{randomGuessesRemaining}</span>
+          )}
+        </button>
+      </div>
+    </div>
   );
-}
+};
 
 export default GameHeader;

@@ -74,7 +74,6 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         
         setSuggestions(filteredData);
         setShowSuggestions(filteredData.length > 0);
-        // Note: we don't need to set selectedIndex here as it's handled in the suggestions effect
       } catch (error) {
         console.error('Search error:', error);
         setSuggestions([]);
@@ -183,8 +182,17 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         role="combobox"
       />
 
+      {isLoading && (
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+        </div>
+      )}
+
       {showSuggestions && suggestions.length > 0 && (
-        <div className="suggestions-list" role="listbox">
+        <div 
+          className="suggestions-list"
+          role="listbox"
+        >
           {suggestions.map((pokemon, index) => (
             <div
               ref={setSuggestionRef(index)}
@@ -204,12 +212,6 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
               <span className="pokemon-suggestion-name">{pokemon.name}</span>
             </div>
           ))}
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
         </div>
       )}
     </div>
