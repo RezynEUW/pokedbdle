@@ -124,7 +124,7 @@
     box-shadow: 
         inset 0 0 0 1px rgba(255, 255, 255, 0.1),
         0 4px 8px rgba(0, 0, 0, 0.25);
-    text-shadow: 0 0px 12px rgba(255, 255, 255, 1);
+    /* text-shadow: 0 0px 12px rgba(255, 255, 255, 1); */
     transition: all 0.2s ease;
 }
 
@@ -184,18 +184,18 @@
 .stat-card.type-card {
     background: transparent;
     box-shadow: none;
-    padding: 6px 0;
+    padding: 12px 0;
     position: relative;
     overflow: hidden;
 }
 
 /* Type card with radial gradient backgrounds */
 .type-card.correct {
-    background: radial-gradient(circle, rgba(43, 187, 85, 0) 20%, rgba(43, 187, 85, 0.55) 100%);
+    background: radial-gradient(circle, rgba(43, 187, 85, 0) 20%, rgba(43, 187, 85, 0.85) 100%);
 }
 
 .type-card.incorrect {
-    background: radial-gradient(circle, rgba(224, 81, 81, 0) 20%, rgba(224, 81, 81, 0.55) 100%);
+    background: radial-gradient(circle, rgba(224, 81, 81, 0) 20%, rgba(224, 81, 81, 0.85) 100%);
 }
 
 .type-card.partial {
