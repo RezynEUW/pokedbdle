@@ -2,6 +2,20 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TimeBasedBackground from "@/components/TimeBasedBackground";
+import { Rubik, Press_Start_2P } from "next/font/google";
+
+const rubik = Rubik({
+  variable: "--font-rubik",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const pixelFont = Press_Start_2P({
+  variable: "--font-pixel",
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +40,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${rubik.variable} ${pixelFont.variable} antialiased`}
+        // style={{ fontFamily: "var(--font-geist-mono), var(--font-geist-sans), sans-serif" }}
       >
         <TimeBasedBackground>
           {children}

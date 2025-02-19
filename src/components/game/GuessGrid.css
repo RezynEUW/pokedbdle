@@ -164,7 +164,7 @@
 
 /* Colorblind-friendly card styles with shapes and patterns */
 .correct {
-    background: radial-gradient(circle, rgba(43, 187, 85, 0.4) 0%, rgba(43, 187, 85, 0.95) 100%);
+    background: radial-gradient(circle, rgba(43, 187, 85, 0.2) 0%, rgba(43, 187, 85, 0.95) 100%);
     color: white !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(255, 255, 255, 0.8); /* Bright border */
@@ -182,7 +182,7 @@
 }
 
 .incorrect {
-    background: radial-gradient(circle, rgba(224, 81, 81, 0.5) 0%, rgba(224, 81, 81, 0.95) 100%);
+    background: radial-gradient(circle, rgba(224, 81, 81, 0.3) 0%, rgba(224, 81, 81, 0.95) 100%);
     color: white !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     border: 2px none rgba(255, 255, 255, 0.4); /* Dashed border */
@@ -200,7 +200,7 @@
 }
 
 .partial {
-    background: radial-gradient(circle, rgba(230, 184, 0, 0.4) 0%, rgba(230, 184, 0, 0.95) 100%);
+    background: radial-gradient(circle, rgba(230, 184, 0, 0.2) 0%, rgba(230, 184, 0, 0.95) 100%);
     color: white !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     border: 2px dashed rgba(255, 255, 255, 0.6); /* Dotted border */
