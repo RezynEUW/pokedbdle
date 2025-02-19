@@ -46,15 +46,15 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   const dailyShinyId = useMemo(() => {
     const date = new Date();
     const seed = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
-    
+
     // Use the seed to generate a number between 1 and 1025
     const baseNumber = ((seed * 9301 + 49297) % 233280) % 1025 + 1;
-    
+
     // If it happens to be the same as target.id, add 1 (or wrap back to 1)
     if (baseNumber === target.id) {
       return baseNumber === 1025 ? 1 : baseNumber + 1;
     }
-    
+
     return baseNumber;
   }, [target.id]);
 
@@ -62,7 +62,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
     // Initialize audio elements
     correctSound.current = new Audio('/sfx/ding.mp3');
     wrongSound.current = new Audio('/sfx/ding.mp3');
-    
+
     if (correctSound.current) {
       correctSound.current.volume = 0.3;
       correctSound.current.preload = 'auto';
@@ -139,7 +139,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
     if (guesses.length > displayGuesses.length) {
       console.log('New guess detected');
       setDisplayGuesses(reversedGuesses);
-      
+
       // Get the latest guess and its comparison results
       const latestGuess = reversedGuesses[0];
       const results = compareGuess(latestGuess, target);
@@ -186,26 +186,25 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
 
       {displayGuesses.map((guess, index) => {
         const comparisonResults = compareGuess(guess, target);
-        
-        return (
-            <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
-                <div className="pokemon-sprite">
-                    <img 
-                    src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default} 
-                    alt={guess?.name || 'Unknown Pokemon'}
-                    />
-                </div>
 
-            <div className={`stat-card type-card ${
-              comparisonResults.types.isCorrect ? 'correct' : 
-              comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
-            }`}>
+        return (
+          <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
+            <div className="pokemon-sprite">
+              <img
+                src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default}
+                alt={guess?.name || 'Unknown Pokemon'}
+              />
+            </div>
+
+            <div className={`stat-card type-card ${comparisonResults.types.isCorrect ? 'correct' :
+                comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
+              }`}>
               <div className="type-icons">
                 {(guess?.types || []).map((type: string) => (
-                  <img 
-                    key={type} 
-                    src={`/icons/${type.charAt(0).toUpperCase() + type.slice(1)}.png`} 
-                    alt={type} 
+                  <img
+                    key={type}
+                    src={`/icons/${type.charAt(0).toUpperCase() + type.slice(1)}.png`}
+                    alt={type}
                     className="type-icon"
                     width="70"
                     height="17"
@@ -241,26 +240,29 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
               {comparisonResults.bst.hint && <span className="hint">{comparisonResults.bst.hint}</span>}
             </div>
 
-            <div className={`stat-card ${
-              comparisonResults.eggGroups?.isCorrect ? 'correct' : 
-              comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
-            }`}>
+            <div className={`stat-card ${comparisonResults.eggGroups?.isCorrect ? 'correct' :
+                comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
+              }`}>
               {(guess?.egg_groups || []).map(formatEggGroup).join(', ') || '-'}
             </div>
 
-            <div className={`stat-card ${
-              comparisonResults.abilities?.isCorrect ? 'correct' : 
-              comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
-            }`}>
-              {(guess?.abilities || [])
-                .map((ability: string) => 
-                  ability
-                    .split('-')
-                    .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(' ')
-                )
-                .join(', \n') || '-'}
-            </div>
+            <div className={`stat-card ${comparisonResults.abilities?.isCorrect ? 'correct' :
+  comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
+}`}>
+  <div className="abilities-container">
+    {(guess?.abilities || [])
+      .map((ability: string, index: number) => (
+        <span key={`ability-${ability}-${index}`} className="ability-item">
+          {ability
+            .split('-')
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ')}
+          {index < (guess?.abilities?.length || 0) - 1 && <span className="ability-separator">, </span>}
+        </span>
+      ))
+    }
+  </div>
+</div>
           </div>
         );
       })}

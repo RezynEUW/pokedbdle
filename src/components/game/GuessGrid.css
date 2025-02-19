@@ -289,3 +289,36 @@
         right: 4px;
     }
 }
+
+/* Add these styles to your GuessGrid.css file */
+
+.abilities-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+  }
+  
+  .ability-item {
+    text-align: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .ability-separator {
+    display: inline-block;
+    margin-left: 2px;
+  }
+  
+  /* Make sure the ability card maintains consistent height */
+  .stat-card:has(.abilities-container) {
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  } 
