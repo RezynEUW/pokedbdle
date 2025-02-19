@@ -74,8 +74,8 @@ body {
 }
 
 .stat-card {
-  background-color: var(--card-bg);
-  border: 2px solid var(--card-border);
+  /* background-color: var(--card-bg); */
+  /* border: 2px solid var(--card-border); */
   border-radius: 8px;
   padding: 8px;
   min-height: 64px;
@@ -90,24 +90,22 @@ body {
 .header-cell {
   text-align: center;
   font-size: 0.85rem;
-  color: #888;
+  /* color: #888; */
   padding: 4px;
 }
 
-.stat-card.correct {
-  background-color: var(--correct);
+/* Removing color overrides from globals.css */
+/* .stat-card.correct {
   color: #000000;
 }
 
 .stat-card.partial {
-  background-color: var(--partial);
   color: #000000;
 }
 
 .stat-card.incorrect {
-  background-color: var(--incorrect);
   color: #000000;
-}
+} */
 
 .header {
   padding: 16px;
