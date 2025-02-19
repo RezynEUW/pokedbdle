@@ -28,6 +28,7 @@
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+
 .grid-container {
     display: grid;
     grid-template-columns: 80px repeat(9, 1fr);
@@ -72,14 +73,14 @@
 
 .pokemon-sprite {
     position: relative;
-    background: rgba(30, 30, 60, 0.6);
+    background: rgba(30, 30, 60, 0.0);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 
-        inset 0 0 15px rgba(255, 255, 255, 0.15),
-        0 5px 15px rgba(0, 0, 0, 0.4);
+        inset 0 0 15px rgba(255, 255, 255, 0.0),
+        0 5px 15px rgba(0, 0, 0, 0.1);
     padding: 8px;
     transition: transform 0.2s ease;
 }
@@ -123,7 +124,7 @@
     border-radius: 6px;
     font-weight: 500;
     box-shadow: 
-        inset 0 0 8 10px rgba(255, 255, 255, 0.1),
+        inset 0 0 8 10px rgba(255, 255, 255, 0.05),
         0 4px 8px rgba(0, 0, 0, 0.25);
     transition: all 0.2s ease;
     position: relative;
@@ -227,7 +228,7 @@
 .stat-card.type-card {
     background: transparent;
     box-shadow: none;
-    padding: 12px 0;
+    padding: 10px 0;
     position: relative;
     overflow: hidden;
 }
@@ -240,12 +241,12 @@
 
 .type-card.incorrect {
     background: radial-gradient(circle, rgba(224, 81, 81, 0) 0%, rgba(224, 81, 81, 0.95) 100%);
-    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border: 2px dotted rgba(255, 255, 255, 0.2);
 }
 
 .type-card.partial {
     background: radial-gradient(circle, rgba(230, 184, 0, 0) 0%, rgba(230, 184, 0, 0.95) 100%);
-    border: 2px dotted rgba(255, 255, 255, 0.6);
+    border: 2px dashed rgba(255, 255, 255, 0.6);
 }
 
 /* Special treatment for numeric values with arrows */
@@ -322,3 +323,108 @@
     align-items: center;
     justify-content: center;
   } 
+
+  /* Improved header cell styles */
+.column-headers {
+    display: grid;
+    grid-template-columns: 80px repeat(9, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px 0 12px 0;
+    border-bottom: 0px dashed rgba(255, 255, 255, 0.15);
+    background: rgba(15, 15, 25, 0.3);
+    border-radius: 8px 8px 0 0;
+}
+
+.header-cell {
+    text-align: center;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    padding: 4px 0;
+    position: relative;
+}
+
+.header-cell::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+
+/* Make sure header text doesn't wrap */
+@media (max-width: 1200px) {
+    .header-cell {
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+@media (max-width: 768px) {
+    .column-headers {
+        padding: 6px 0 10px 0;
+    }
+    
+    .header-cell {
+        font-size: 0.7rem;
+        letter-spacing: 0;
+    }
+}
+
+/* Improved grid layout with consistent column sizing */
+.column-headers,
+.grid-container {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) repeat(9, 1fr);
+  gap: 8px;
+}
+
+/* Make Pokemon header cell equal width to others with proper padding */
+.header-cell:first-child {
+  min-width: 100px;
+  padding: 4 8px;
+  text-align: center;
+  position: relative;
+}
+
+/* Ensure consistent sprite container size */
+.pokemon-sprite {
+  width: 100%;
+  min-width: 100px;
+  min-height: 102px;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.pokemon-sprite img {
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Add responsive adjustments for consistent sizing */
+@media (max-width: 768px) {
+  .column-headers,
+  .grid-container {
+    grid-template-columns: minmax(80px, 1fr) repeat(9, 1fr);
+  }
+  
+  .header-cell:first-child {
+    min-width: 80px;
+  }
+  
+  .pokemon-sprite {
+    min-width: 80px;
+  }
+}

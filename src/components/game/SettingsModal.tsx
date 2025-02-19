@@ -1,5 +1,7 @@
 // src/components/game/SettingsModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
+import './Modal.css';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -7,104 +9,139 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [hardMode, setHardMode] = useState(false);
-  const [colorBlindMode, setColorBlindMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  // Initialize state from localStorage if available
+  const [hardMode, setHardMode] = useState(() => {
+    const saved = localStorage.getItem('pokedle-hard-mode');
+    return saved ? saved === 'true' : false;
+  });
+  
+  const [colorBlindMode, setColorBlindMode] = useState(() => {
+    const saved = localStorage.getItem('pokedle-colorblind-mode');
+    return saved ? saved === 'true' : false;
+  });
+  
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('pokedle-dark-mode');
+    return saved ? saved === 'true' : false;
+  });
 
-  if (!isOpen) return null;
+  // Apply settings when they change
+  useEffect(() => {
+    localStorage.setItem('pokedle-hard-mode', hardMode.toString());
+    // Additional logic for hard mode implementation if needed
+  }, [hardMode]);
 
-  const toggleSetting = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    setter(prev => !prev);
+  useEffect(() => {
+    localStorage.setItem('pokedle-colorblind-mode', colorBlindMode.toString());
+    if (colorBlindMode) {
+      document.documentElement.classList.add('colorblind');
+    } else {
+      document.documentElement.classList.remove('colorblind');
+    }
+  }, [colorBlindMode]);
+
+  useEffect(() => {
+    localStorage.setItem('pokedle-dark-mode', darkMode.toString());
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  const handleToggle = (
+    setter: React.Dispatch<React.SetStateAction<boolean>>,
+    currentValue: boolean
+  ) => {
+    setter(!currentValue);
+  };
+
+  const handleReset = () => {
+    // Save current theme preference before reset
+    const currentDarkMode = darkMode;
+    const currentColorBlind = colorBlindMode;
+    
+    // Clear all localStorage items
+    localStorage.clear();
+    
+    // Restore theme preferences to avoid jarring visual change
+    localStorage.setItem('pokedle-dark-mode', currentDarkMode.toString());
+    localStorage.setItem('pokedle-colorblind-mode', currentColorBlind.toString());
+    
+    // Reset game-specific settings
+    setHardMode(false);
+    
+    // Show confirmation to user
+    alert('Game progress has been reset!');
+    // Optional: reload the page
+    window.location.reload();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Game Settings</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ✕
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Game Settings"
+    >
+      <div className="setting-item">
+        <div className="setting-info">
+          <div className="setting-label">Hard Mode</div>
+          <div className="setting-description">Guesses must match previous correct hints</div>
         </div>
-
-        <div className="space-y-4">
-          <SettingToggle 
-            label="Hard Mode" 
-            description="Guesses must match previous correct guesses"
-            isEnabled={hardMode}
-            onToggle={() => toggleSetting(setHardMode)}
+        <label className="toggle-switch">
+          <input 
+            type="checkbox" 
+            checked={hardMode}
+            onChange={() => handleToggle(setHardMode, hardMode)}
           />
+          <span className="toggle-slider"></span>
+        </label>
+      </div>
 
-          <SettingToggle 
-            label="Color Blind Mode" 
-            description="Alternative color scheme for better accessibility"
-            isEnabled={colorBlindMode}
-            onToggle={() => toggleSetting(setColorBlindMode)}
-          />
-
-          <SettingToggle 
-            label="Dark Mode" 
-            description="Switch to dark color scheme"
-            isEnabled={darkMode}
-            onToggle={() => toggleSetting(setDarkMode)}
-          />
-
-          <div className="pt-4 border-t border-gray-200">
-            <h3 className="font-semibold mb-2">Reset Game Data</h3>
-            <button 
-              className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600 transition-colors"
-              onClick={() => {
-                // Implement reset logic
-                localStorage.clear();
-                window.location.reload();
-              }}
-            >
-              Reset All Progress
-            </button>
-          </div>
+      <div className="setting-item">
+        <div className="setting-info">
+          <div className="setting-label">Color Blind Mode</div>
+          <div className="setting-description">High contrast colors with patterns for better accessibility</div>
         </div>
+        <label className="toggle-switch">
+          <input 
+            type="checkbox" 
+            checked={colorBlindMode}
+            onChange={() => handleToggle(setColorBlindMode, colorBlindMode)}
+          />
+          <span className="toggle-slider"></span>
+        </label>
       </div>
-    </div>
-  );
-}
 
-interface SettingToggleProps {
-  label: string;
-  description: string;
-  isEnabled: boolean;
-  onToggle: () => void;
-}
-
-function SettingToggle({ 
-  label, 
-  description, 
-  isEnabled, 
-  onToggle 
-}: SettingToggleProps) {
-  return (
-    <div className="flex justify-between items-center">
-      <div>
-        <div className="font-semibold">{label}</div>
-        <div className="text-sm text-gray-600">{description}</div>
+      <div className="setting-item">
+        <div className="setting-info">
+          <div className="setting-label">Dark Mode</div>
+          <div className="setting-description">Reduce eye strain with darker colors</div>
+        </div>
+        <label className="toggle-switch">
+          <input 
+            type="checkbox" 
+            checked={darkMode}
+            onChange={() => handleToggle(setDarkMode, darkMode)}
+          />
+          <span className="toggle-slider"></span>
+        </label>
       </div>
-      <button 
-        onClick={onToggle}
-        className={`
-          w-14 h-8 rounded-full p-1 transition-colors
-          ${isEnabled ? 'bg-green-500' : 'bg-gray-300'}
-        `}
-      >
-        <div 
-          className={`
-            w-6 h-6 rounded-full bg-white shadow-md transform transition-transform
-            ${isEnabled ? 'translate-x-6' : 'translate-x-0'}
-          `}
-        />
-      </button>
-    </div>
+
+      <div className="reset-section">
+        <h3 className="section-title">Reset Game Data</h3>
+        <p className="reset-description">
+          This will clear all your saved data including statistics and current streak.
+          This action cannot be undone.
+        </p>
+        <button 
+          className="reset-button"
+          onClick={handleReset}
+        >
+          Reset All Progress
+        </button>
+      </div>
+    </Modal>
   );
 }
 

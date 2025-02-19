@@ -1,5 +1,7 @@
 // src/components/game/HelpModal.tsx
 import React from 'react';
+import Modal from '../ui/Modal';
+import './Modal.css';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -7,70 +9,77 @@ interface HelpModalProps {
 }
 
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full max-h-[80vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">How to Play Pokédle</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            ✕
-          </button>
-        </div>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose}
+      title="How to Play Pokédle"
+    >
+      <section className="modal-section">
+        <h3 className="section-title">Game Objective</h3>
+        <p>
+          Guess the daily Pokémon in as few tries as possible. You have unlimited guesses!
+          Try to maintain your streak by guessing each day's Pokémon.
+        </p>
+      </section>
 
-        <div className="space-y-4">
-          <section>
-            <h3 className="font-semibold mb-2">Game Objective</h3>
-            <p>Guess the daily Pokémon in 8 tries or less!</p>
-          </section>
+      <section className="modal-section">
+        <h3 className="section-title">How to Play</h3>
+        <ol className="numbered-list">
+          <li>
+            Type a Pokémon name in the search bar and select from the suggestions that appear
+          </li>
+          <li>
+            After submitting your guess, the game will show how your guess compares to the target Pokémon across multiple attributes
+          </li>
+          <li>
+            Use the information from previous guesses to narrow down possibilities
+          </li>
+          <li>
+            The game updates daily at midnight local time
+          </li>
+        </ol>
+      </section>
 
-          <section>
-            <h3 className="font-semibold mb-2">How to Play</h3>
-            <ol className="list-decimal list-inside space-y-2">
-              <li>Type a Pokémon name in the search bar</li>
-              <li>Select a Pokémon from the suggestions</li>
-              <li>See how your guess compares to the target Pokémon</li>
-            </ol>
-          </section>
+      <section className="modal-section">
+        <h3 className="section-title">The Random Button</h3>
+        <p>
+          Not sure where to start? You can use the random button up to 5 times per day:
+        </p>
+        <ul className="bullet-list">
+          <li>The random button provides a valid guess from the Pokédex</li>
+          <li>It's a great way to get started or if you're stuck</li>
+          <li>Your daily allowance resets at midnight</li>
+        </ul>
+      </section>
 
-          <section>
-            <h3 className="font-semibold mb-2">Guess Indicators</h3>
-            <ul className="space-y-2">
-              <li>
-                <span className="bg-green-200 px-2 py-1 rounded mr-2">Green</span>
-                Exactly Correct
-              </li>
-              <li>
-                <span className="bg-yellow-200 px-2 py-1 rounded mr-2">Yellow</span>
-                Partially Correct
-              </li>
-              <li>
-                <span className="bg-red-200 px-2 py-1 rounded mr-2">Red</span>
-                Incorrect
-              </li>
-            </ul>
-          </section>
+      <section className="modal-section">
+        <h3 className="section-title">Guess Indicators</h3>
+        <ul className="indicator-list">
+          <li className="indicator-item">
+            <span className="indicator correct"></span>
+            <span><strong>Green:</strong> Exactly correct</span>
+          </li>
+          <li className="indicator-item">
+            <span className="indicator partial"></span>
+            <span><strong>Yellow:</strong> Partially correct (e.g., one type matches)</span>
+          </li>
+          <li className="indicator-item">
+            <span className="indicator incorrect"></span>
+            <span><strong>Red:</strong> Incorrect</span>
+          </li>
+        </ul>
+      </section>
 
-          <section>
-            <h3 className="font-semibold mb-2">Hints</h3>
-            <p>For numeric attributes like Height and Weight:</p>
-            <ul className="list-disc list-inside">
-              <li>↑ means the target is higher</li>
-              <li>↓ means the target is lower</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3 className="font-semibold mb-2">Daily Challenge</h3>
-            <p>A new Pokémon is available each day. Can you guess it?</p>
-          </section>
-        </div>
-      </div>
-    </div>
+      <section className="modal-section">
+        <h3 className="section-title">Tips & Strategies</h3>
+        <ul className="bullet-list">
+          <li>Start with popular Pokémon from different generations</li>
+          <li>Pay attention to the numeric hints (↑/↓) to narrow down height, weight, and BST</li>
+          <li>Use the random button strategically if you're not sure where to start</li>
+        </ul>
+      </section>
+    </Modal>
   );
 }
 
