@@ -21,7 +21,11 @@ export default function Home() {
   useEffect(() => {
     const fetchTargetPokemon = async () => {
       try {
-        const response = await fetch('/api/daily');
+        // Get current hour to help determine which daily Pokémon to show
+        const now = new Date();
+        const hour = now.getHours();
+        
+        const response = await fetch(`/api/daily?hour=${hour}`);
         if (!response.ok) {
           throw new Error('Failed to fetch daily pokemon');
         }
@@ -71,8 +75,11 @@ export default function Home() {
       // Store the game completion status
       gameCompletedRef.current = true;
       
+      // Get current hour for API consistency
+      const hour = new Date().getHours();
+      
       // Update API that game is completed
-      fetch('/api/daily/complete', {
+      fetch(`/api/daily/complete?hour=${hour}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
