@@ -1,10 +1,4 @@
-/* src/app/globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  --background: #000000;
   --text: #ffffff;
   --card-bg: #1a1a1a;
   --card-border: #333333;
@@ -22,10 +16,116 @@ body {
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.main-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 16px;
+.game-result-container {
+  position: relative;
+  padding-bottom: 5rem;
+}
+
+.win-message-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.win-message {
+  background: linear-gradient(
+    135deg, 
+    rgba(74, 222, 128, 0.2), 
+    rgba(59, 130, 246, 0.2)
+  );
+  border: 2px solid transparent;
+  border-image: linear-gradient(
+    to right, 
+    #4ade80, 
+    #60a5fa
+  ) 1;
+  box-shadow: 
+    0 15px 30px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(74, 222, 128, 0.3);
+  
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  
+  padding: 1.25rem;
+  max-width: 24rem;
+  width: 100%;
+  text-align: center;
+  
+  transform: perspective(1000px) rotateX(5deg) rotateY(-5deg);
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.win-message:hover {
+  transform: scale(1.05) rotateX(0) rotateY(0);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(74, 222, 128, 0.4);
+}
+
+.win-message-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4ade80;
+  margin-bottom: 0.5rem;
+}
+
+.win-message-subtitle {
+  font-size: 1.25rem;
+  color: #60a5fa;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border-bottom: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.error-content {
+  text-align: center;
+}
+
+.error-message {
+  color: #f87171;
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.retry-button:hover {
+  background-color: #2563eb;
 }
 
 .guesses-container {
@@ -74,8 +174,6 @@ body {
 }
 
 .stat-card {
-  /* background-color: var(--card-bg); */
-  /* border: 2px solid var(--card-border); */
   border-radius: 8px;
   padding: 8px;
   min-height: 64px;
@@ -87,59 +185,7 @@ body {
   word-break: break-word;
 }
 
-.header-cell {
-  text-align: center;
-  font-size: 0.85rem;
-  /* color: #888; */
-  padding: 4px;
-}
-
-/* Removing color overrides from globals.css */
-/* .stat-card.correct {
-  color: #000000;
-}
-
-.stat-card.partial {
-  color: #000000;
-}
-
-.stat-card.incorrect {
-  color: #000000;
-} */
-
-.header {
-  padding: 16px;
-  border-bottom: 1px solid var(--card-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.title {
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-}
-
-/* Remove scrollbars */
-.grid-container, .column-headers {
-  overflow: visible;
-}
-
-/* Button styles */
-.button {
-  background: white;
-  color: black;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.button:hover {
-  opacity: 0.9;
+.main-title {
+  padding: 0;
+  margin: 0;
 }
