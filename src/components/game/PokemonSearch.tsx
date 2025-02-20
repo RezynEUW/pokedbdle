@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { Pokemon } from '@/types/pokemon';
 import './PokemonSearch.css';
 
@@ -178,6 +179,7 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         placeholder="Enter Pokémon name..."
         className="search-input"
         aria-expanded={showSuggestions}
+        aria-controls="suggestions-listbox"
         aria-autocomplete="list"
         role="combobox"
       />
@@ -192,6 +194,7 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         <div 
           className="suggestions-list"
           role="listbox"
+          id="suggestions-listbox"
         >
           {suggestions.map((pokemon, index) => (
             <div
@@ -204,10 +207,13 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
               aria-selected={selectedIndex === index}
               tabIndex={-1}
             >
-              <img
+              <Image
                 src={pokemon.sprite_default}
                 alt={pokemon.name}
                 className="pokemon-suggestion-sprite"
+                width={40}
+                height={40}
+                unoptimized={true}
               />
               <span className="pokemon-suggestion-name">{pokemon.name}</span>
             </div>

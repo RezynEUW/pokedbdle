@@ -249,3 +249,22 @@
     text-align: center;
   }
 }
+
+/* Update the hover effects to rotate only the SVG icon */
+.random-guess-btn:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.4);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), 
+              0 0 0 2px rgba(74, 222, 128, 0.2);
+}
+
+.random-guess-btn:hover:not(:disabled) svg {
+  transform: rotate(15deg);
+  transition: transform 0.2s ease;
+}
+
+/* Make sure the SVG has a transition */
+.random-guess-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}

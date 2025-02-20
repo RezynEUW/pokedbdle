@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import Image from 'next/image';
 import { Pokemon } from '@/types/pokemon';
 import { compareGuess } from '@/lib/game/compareGuess';
 import './GuessGrid.css';
@@ -167,7 +168,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
         timeoutsRef.current.push(timeout);
       });
     }
-  }, [guesses.length]);
+  }, [guesses.length, displayGuesses.length, reversedGuesses, target]);
 
   return (
     <div className="guesses-container">
@@ -189,26 +190,30 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
 
         return (
           <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
-<div className="pokemon-sprite">
-  <div className="guess-counter">{displayGuesses.length - index}</div>
-  <img
-    src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default}
-    alt={guess?.name || 'Unknown Pokemon'}
-  />
-</div>
+            <div className="pokemon-sprite">
+              <div className="guess-counter">{displayGuesses.length - index}</div>
+              <Image
+                src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default}
+                alt={guess?.name || 'Unknown Pokemon'}
+                width={100}
+                height={100}
+                unoptimized={true}
+              />
+            </div>
 
             <div className={`stat-card type-card ${comparisonResults.types.isCorrect ? 'correct' :
                 comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
               }`}>
               <div className="type-icons">
                 {(guess?.types || []).map((type: string) => (
-                  <img
+                  <Image
                     key={type}
                     src={`/icons/${type.charAt(0).toUpperCase() + type.slice(1)}.png`}
                     alt={type}
                     className="type-icon"
-                    width="70"
-                    height="17"
+                    width={70}
+                    height={17}
+                    unoptimized={true}
                   />
                 ))}
               </div>
@@ -242,37 +247,37 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
             </div>
 
             <div className={`stat-card ${comparisonResults.eggGroups?.isCorrect ? 'correct' :
-  comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
-}`}>
-  <div className="egg-groups-container">
-    {(guess?.egg_groups || [])
-      .map((eggGroup: string, index: number) => (
-        <span key={`egg-group-${eggGroup}-${index}`} className="egg-group-item">
-          {formatEggGroup(eggGroup)}
-          {index < (guess?.egg_groups?.length || 0) - 1 && <span className="egg-group-separator"></span>}
-        </span>
-      ))
-    }
-  </div>
-</div>
+              comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
+            }`}>
+              <div className="egg-groups-container">
+                {(guess?.egg_groups || [])
+                  .map((eggGroup: string, index: number) => (
+                    <span key={`egg-group-${eggGroup}-${index}`} className="egg-group-item">
+                      {formatEggGroup(eggGroup)}
+                      {index < (guess?.egg_groups?.length || 0) - 1 && <span className="egg-group-separator"></span>}
+                    </span>
+                  ))
+                }
+              </div>
+            </div>
 
             <div className={`stat-card ${comparisonResults.abilities?.isCorrect ? 'correct' :
-  comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
-}`}>
-  <div className="abilities-container">
-    {(guess?.abilities || [])
-      .map((ability: string, index: number) => (
-        <span key={`ability-${ability}-${index}`} className="ability-item">
-          {ability
-            .split('-')
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ')}
-          {index < (guess?.abilities?.length || 0) - 1 && <span className="ability-separator"></span>}
-        </span>
-      ))
-    }
-  </div>
-</div>
+              comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
+            }`}>
+              <div className="abilities-container">
+                {(guess?.abilities || [])
+                  .map((ability: string, index: number) => (
+                    <span key={`ability-${ability}-${index}`} className="ability-item">
+                      {ability
+                        .split('-')
+                        .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(' ')}
+                      {index < (guess?.abilities?.length || 0) - 1 && <span className="ability-separator"></span>}
+                    </span>
+                  ))
+                }
+              </div>
+            </div>
           </div>
         );
       })}

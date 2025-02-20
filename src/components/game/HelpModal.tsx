@@ -1,4 +1,4 @@
-// src/components/game/HelpModal.tsx
+// src/components/game/HelpModal.tsx - Escaped apostrophes
 import React from 'react';
 import Modal from '../ui/Modal';
 import './Modal.css';
@@ -19,7 +19,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <h3 className="section-title">Game Objective</h3>
         <p>
           Guess the daily Pokémon in as few tries as possible. You have unlimited guesses!
-          Try to maintain your streak by guessing each day's Pokémon.
+          Try to maintain your streak by guessing each day&apos;s Pokémon.
         </p>
       </section>
 
@@ -48,7 +48,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         </p>
         <ul className="bullet-list">
           <li>The random button provides a valid guess from the Pokédex</li>
-          <li>It's a great way to get started or if you're stuck</li>
+          <li>It&apos;s a great way to get started or if you&apos;re stuck</li>
           <li>Your daily allowance resets at midnight</li>
         </ul>
       </section>
@@ -76,7 +76,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <ul className="bullet-list">
           <li>Start with popular Pokémon from different generations</li>
           <li>Pay attention to the numeric hints (↑/↓) to narrow down height, weight, and BST</li>
-          <li>Use the random button strategically if you're not sure where to start</li>
+          <li>Use the random button strategically if you&apos;re not sure where to start</li>
         </ul>
       </section>
     </Modal>

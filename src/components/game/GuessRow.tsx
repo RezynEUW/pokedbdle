@@ -1,5 +1,6 @@
 // src/components/game/GuessRow.tsx
 import React from 'react';
+import Image from 'next/image';
 import { Pokemon } from '@/types/pokemon';
 import { GuessResult } from '@/types/game';
 
@@ -39,18 +40,24 @@ export function GuessRow({ pokemon, results, guessNumber }: GuessRowProps) {
           <div className="type-icons">
             {Array.isArray(result.value) ? (
               result.value.map((type, idx) => (
-                <img 
+                <Image 
                   key={idx}
                   src={`/types/${type.toLowerCase()}.png`} 
                   alt={type}
                   className="type-icon"
+                  width={70}
+                  height={17}
+                  unoptimized={true}
                 />
               ))
             ) : (
-              <img 
+              <Image 
                 src={`/types/${String(result.value).toLowerCase()}.png`} 
                 alt={String(result.value)}
                 className="type-icon"
+                width={70}
+                height={17}
+                unoptimized={true}
               />
             )}
           </div>
@@ -89,10 +96,13 @@ export function GuessRow({ pokemon, results, guessNumber }: GuessRowProps) {
         {guessNumber !== undefined && (
           <span className="guess-number">{guessNumber}</span>
         )}
-        <img 
+        <Image 
           src={pokemon.sprite_default} 
           alt={pokemon.name}
-          loading="lazy"
+          width={100}
+          height={100}
+          unoptimized={true}
+          priority={false}
         />
       </div>
       {results.map((result, index) => (
