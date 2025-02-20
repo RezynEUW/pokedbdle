@@ -12,7 +12,11 @@ export async function GET(request: NextRequest) {
     
     // Determine dates to use
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    
+    // Adjust date based on client's local hour
+    const today = clientHour < 5 
+      ? new Date(now.setDate(now.getDate() + 1)).toISOString().split('T')[0]
+      : now.toISOString().split('T')[0];
     
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);

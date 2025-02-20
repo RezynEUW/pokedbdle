@@ -228,25 +228,14 @@ export default function Home() {
           guessedPokemon={guesses}
           gameState={gameState}
           yesterdaysPokemon={yesterdaysPokemon || undefined}
+          targetPokemon={targetPokemon}
+          guessCount={guesses.length}
           disabled={!targetPokemon || gameState !== 'playing' || isLoading}
         />
 
         {targetPokemon ? (
           <div className="game-result-container">
             <GuessGrid guesses={guesses} target={targetPokemon} />
-            
-            {gameState === 'won' && (
-              <div className="win-message-wrapper">
-                <div className="win-message">
-                  <div className="win-message-title">
-                    Congratulations!
-                  </div>
-                  <div className="win-message-subtitle">
-                    You guessed {targetPokemon.name}!
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="loading-container">

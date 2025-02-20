@@ -1,8 +1,7 @@
 /* src/components/game/GameHeader.css */
 .game-header {
   display: grid;
-  grid-template-columns: 150px 1fr 150px;
-  align-items: center;
+  grid-template-rows: auto auto;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto 24px;
@@ -13,6 +12,14 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 100;
+  gap: 16px;
+}
+
+.header-top-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  align-items: center;
+  width: 100%;
 }
 
 /* Left section with streak counter */
@@ -32,7 +39,7 @@
 
 .search-wrapper {
   width: 100%;
-  max-width: 400px; /* Adjust this to control search bar width */
+  max-width: 400px;
 }
 
 /* Right section with action buttons */
@@ -63,38 +70,43 @@
   position: relative;
   overflow: hidden;
   width: 100px;
-}
-
-.streak-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.streak-counter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(30, 30, 60, 0.6);
-  border-radius: 8px;
-  padding: 8px 16px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  overflow: hidden;
-  width: 100px;
   height: 84px;
 }
 
+.streak-counter::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4ade80, #facc15);
+  opacity: 0.8;
+}
+
+.streak-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.streak-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Yesterday's Pokemon */
 .yesterday-pokemon {
   display: flex;
   flex-direction: row;
   align-items: center;
-
   border-radius: 8px;
   padding: 8px 12px;
-  width: 220px;
+  width: auto;
   height: 84px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -139,33 +151,102 @@
   opacity: 0.3;
 }
 
-.streak-counter::before {
-  content: '';
+/* Win Message Styles */
+.win-message-container {
+  width: 100%;
+  grid-row: 2;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.win-message {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: rgba(30, 30, 60, 0.6);
+  border-radius: 12px;
+  padding: 16px 24px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  animation: slideDown 0.5s ease-out;
+}
+
+.win-message-close-btn {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #4ade80, #facc15);
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.win-message-close-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.win-message-pokemon-sprites {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.win-message-pokemon-sprites img {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: opacity 0.2s ease;
+}
+
+.win-message-pokemon-sprites img:hover {
   opacity: 0.8;
 }
 
-.streak-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-  margin-bottom: 2px;
+.win-message-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.streak-value {
+.win-message-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4ade80;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.win-message-pokemon-name {
   font-size: 1.5rem;
   font-weight: bold;
   color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-transform: capitalize;
 }
 
-/* Base button styling */
+.win-message-guesses {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Styles */
 .random-guess-btn,
 .icon-btn {
   display: flex;
@@ -185,14 +266,12 @@
   flex-shrink: 0;
 }
 
-/* Button hover effects */
 .random-guess-btn:hover:not(:disabled) {
   background: rgba(74, 222, 128, 0.4);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), 
               0 0 0 2px rgba(74, 222, 128, 0.2);
 }
 
-/* Rotate only the SVG on hover */
 .random-guess-btn:hover:not(:disabled) svg {
   transform: rotate(15deg);
 }
@@ -237,10 +316,9 @@
 .icon-btn svg {
   width: 20px;
   height: 20px;
-  transition: transform 0.2s ease; /* Smooth rotation transition */
+  transition: transform 0.2s ease;
 }
 
-/* Counter badge for remaining guesses */
 .guess-counter {
   position: absolute;
   top: -5px;
@@ -258,7 +336,7 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Enhanced tooltip for buttons */
+/* Button tooltips */
 .random-guess-btn:hover::after,
 .icon-btn:hover::after {
   content: attr(title);
@@ -278,12 +356,10 @@
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
-  .game-header {
-    display: grid;
+  .header-top-row {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     gap: 16px;
-    padding: 16px;
   }
 
   .left-controls,
@@ -303,11 +379,25 @@
   
   .right-controls {
     order: 3;
-    gap: 20px; /* More space between buttons on mobile */
+    gap: 20px;
   }
 
   .search-wrapper {
     max-width: 100%;
+  }
+
+  .win-message {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 16px;
+  }
+
+  .win-message-pokemon-sprites {
+    justify-content: center;
+  }
+
+  .win-message-text {
+    align-items: center;
   }
 }
 
@@ -333,7 +423,6 @@
     max-width: none;
   }
   
-  /* Adjust tooltips on small screens */
   .random-guess-btn:hover::after,
   .icon-btn:hover::after {
     bottom: -50px;
@@ -341,4 +430,173 @@
     transform: translateX(50%);
     text-align: center;
   }
+
+  .win-message-container {
+    padding: 0 8px;
+  }
 }
+
+.win-message-container {
+  width: 100%;
+  grid-row: 2;
+  display: flex;
+  justify-content: center;
+  padding: 0 0px;
+}
+
+.win-message {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  gap: 16px;
+  align-items: center;
+  background: rgba(30, 30, 60, 0.6);
+  border-radius: 12px;
+  padding: 24px 32px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  animation: slideDown 0.5s ease-out;
+}
+
+.win-message-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.win-message-close-btn:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.win-message-pokemon-sprites {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.win-message-pokemon-sprites img {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: opacity 0.2s ease;
+}
+
+.win-message-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.win-message-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4ade80;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.win-message-pokemon-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  text-transform: capitalize;
+}
+
+.win-message-guesses {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.win-message {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  gap: 16px;
+  align-items: center;
+  background: rgba(30, 30, 60, 0.01); /* Lightened background */
+  border-radius: 12px;
+  padding: 24px 48px; /* Increased horizontal padding */
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  animation: slideDown 0.2s ease-out;
+}
+
+.win-message-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.win-message-close-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.win-message-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  background: linear-gradient(
+    90deg,
+    #4ade80,
+    #60a5fa,
+    #a78bfa,
+    #4ade80
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientText 24s linear infinite;
+  text-shadow: none;
+}
+
+@keyframes gradientText {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+.win-message-pokemon-sprites {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 12px; /* Added margin to move sprites inward */
+}
+

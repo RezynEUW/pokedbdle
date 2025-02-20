@@ -6,7 +6,7 @@
 }
 
 .search-input {
-  width: 100%;
+  width: 340px;
   padding: 12px 16px;
   padding-right: 40px; /* Space for loading spinner */
   border: 2px solid var(--card-border, rgba(255, 255, 255, 0.15));
