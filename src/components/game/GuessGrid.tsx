@@ -189,12 +189,13 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
 
         return (
           <div key={`guess-${displayGuesses.length - index}`} className="grid-container">
-            <div className="pokemon-sprite">
-              <img
-                src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default}
-                alt={guess?.name || 'Unknown Pokemon'}
-              />
-            </div>
+<div className="pokemon-sprite">
+  <div className="guess-counter">{displayGuesses.length - index}</div>
+  <img
+    src={guess?.id === dailyShinyId ? (guess?.sprite_shiny || guess?.sprite_default) : guess?.sprite_default}
+    alt={guess?.name || 'Unknown Pokemon'}
+  />
+</div>
 
             <div className={`stat-card type-card ${comparisonResults.types.isCorrect ? 'correct' :
                 comparisonResults.types.isPartiallyCorrect ? 'partial' : 'incorrect'
@@ -241,10 +242,19 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
             </div>
 
             <div className={`stat-card ${comparisonResults.eggGroups?.isCorrect ? 'correct' :
-                comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
-              }`}>
-              {(guess?.egg_groups || []).map(formatEggGroup).join(', ') || '-'}
-            </div>
+  comparisonResults.eggGroups?.isPartiallyCorrect ? 'partial' : 'incorrect'
+}`}>
+  <div className="egg-groups-container">
+    {(guess?.egg_groups || [])
+      .map((eggGroup: string, index: number) => (
+        <span key={`egg-group-${eggGroup}-${index}`} className="egg-group-item">
+          {formatEggGroup(eggGroup)}
+          {index < (guess?.egg_groups?.length || 0) - 1 && <span className="egg-group-separator"></span>}
+        </span>
+      ))
+    }
+  </div>
+</div>
 
             <div className={`stat-card ${comparisonResults.abilities?.isCorrect ? 'correct' :
   comparisonResults.abilities?.isPartiallyCorrect ? 'partial' : 'incorrect'
@@ -257,7 +267,7 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
             .split('-')
             .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ')}
-          {index < (guess?.abilities?.length || 0) - 1 && <span className="ability-separator">, </span>}
+          {index < (guess?.abilities?.length || 0) - 1 && <span className="ability-separator"></span>}
         </span>
       ))
     }

@@ -34,7 +34,7 @@
     grid-template-columns: 80px repeat(9, 1fr);
     gap: 10px;
     align-items: center;
-}
+} 
 
 /* Animation base setup */
 .grid-container > * {
@@ -427,4 +427,93 @@
   .pokemon-sprite {
     min-width: 80px;
   }
+}
+
+/* Add to the end of GuessGrid.css */
+
+/* Force white color for guess counter */
+.guesses-container .grid-container .pokemon-sprite .guess-counter {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 15px;
+  font-weight: bold;
+  color: rgb(255, 255, 255) !important; /* Using RGB value instead of 'white' */
+  opacity: 0.2;
+  z-index: 5;
+  pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* Reset any potential inheritance */
+  background: transparent !important;
+  border: none !important;
+  display: block !important;
+}
+
+/* Clear any pseudo-elements */
+.guesses-container .grid-container .pokemon-sprite .guess-counter::before,
+.guesses-container .grid-container .pokemon-sprite .guess-counter::after {
+  display: none !important;
+  content: none !important;
+  color: transparent !important;
+  background: none !important;
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+  .guesses-container .grid-container .pokemon-sprite .guess-counter {
+    font-size: 13px;
+  }
+}
+
+/* Column widths */
+.grid-container > *:nth-child(2) { /* Type column */
+  width: 140px;
+}
+.grid-container > *:nth-child(9) { /* Egg Groups column */
+  width: 110px;
+}
+.grid-container > *:nth-child(10) { /* Abilities column */
+  width: 140px;
+}
+
+/* Column header widths */
+.column-headers > *:nth-child(2) { /* Type header */
+  width: 144px;
+}
+.column-headers > *:nth-child(9) { /* Egg Groups header */ 
+  width: 130px;
+}
+.column-headers > *:nth-child(10) { /* Abilities header */ 
+  width: 160px;
+}
+
+.egg-groups-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.egg-group-item {
+  text-align: center;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.egg-group-separator {
+  display: inline-block;
+  margin-left: 2px;
+}
+
+/* Make sure the egg group card maintains consistent height */
+.stat-card:has(.egg-groups-container) {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
