@@ -165,7 +165,7 @@
   align-items: center;
   background: rgba(30, 30, 60, 0.01);
   border-radius: 12px;
-  padding: 24px 48px;
+  padding: 24px 300px;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -221,17 +221,12 @@
   animation: sparkle 2s ease-in-out infinite;
 }
 
-.win-message-pokemon-sprites img {
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  transition: opacity 0.2s ease;
-}
-
 .win-message-pokemon-sprites img:first-child {
-  margin-left: -100px;
+  margin-left: -0px;
 }
 
 .win-message-pokemon-sprites img:last-child {
-  margin-right: -100px;
+  margin-right: -0px;
 }
 
 .win-message-text {

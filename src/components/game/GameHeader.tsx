@@ -278,10 +278,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         onClose={() => setIsSettingsModalOpen(false)} 
       />
 
-<div className="right-controls">
-  <GenSelect onGenerationsChange={onGenerationsChange} />
-  {/* existing buttons */}
-</div>
+      
     </div>
   );
 };

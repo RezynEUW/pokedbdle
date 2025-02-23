@@ -197,6 +197,12 @@ export default function Home() {
     window.location.reload();
   }, []);
 
+  const handleGenerationsChange = useCallback((generations: number[]) => {
+    // Here you can handle generation changes
+    console.log('Selected generations:', generations);
+    // You might want to reset the game or update available Pokémon
+  }, []);
+
   if (error) {
     return (
       <div className="error-container">
@@ -214,7 +220,7 @@ export default function Home() {
   }
 
   return (
-   <div className="main-screen">
+    <div className="main-screen">
       <header className="main-header">
         <h1 className="main-title">Pokédle</h1>
       </header>
@@ -231,6 +237,7 @@ export default function Home() {
           targetPokemon={targetPokemon}
           guessCount={guesses.length}
           disabled={!targetPokemon || gameState !== 'playing' || isLoading}
+          onGenerationsChange={handleGenerationsChange}
         />
 
         {targetPokemon ? (
