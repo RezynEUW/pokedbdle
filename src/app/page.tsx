@@ -214,7 +214,7 @@ export default function Home() {
   }
 
   return (
-    <div className="main-screen">
+   <div className="main-screen">
       <header className="main-header">
         <h1 className="main-title">Pokédle</h1>
       </header>
