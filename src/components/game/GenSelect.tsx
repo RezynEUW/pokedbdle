@@ -1,7 +1,7 @@
 // /src/components/game/GenSelect.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './GenSelect.css';
 
 interface GenSelectProps {
@@ -32,6 +32,13 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange }) => {
     });
   };
 
+  const handleSelectAll = () => {
+    const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
+    setSelectedGens(allGens);
+    localStorage.setItem('pokedle-generations', JSON.stringify(allGens));
+    onGenerationsChange(allGens);
+  };
+
   const isSelected = (gen: number) => selectedGens.includes(gen);
 
   return (
@@ -60,13 +67,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange }) => {
           </button>
         ))}
         <button
-          className="gen-button all"
-          onClick={() => {
-            const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
-            setSelectedGens(allGens);
-            localStorage.setItem('pokedle-generations', JSON.stringify(allGens));
-            onGenerationsChange(allGens);
-          }}
+          className={`gen-button all ${selectedGens.length === 9 ? 'selected' : ''}`}
+          onClick={handleSelectAll}
           title="All Generations"
         >
           All

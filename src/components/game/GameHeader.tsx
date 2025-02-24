@@ -6,8 +6,8 @@ import { PokemonSearch } from './PokemonSearch';
 import { Pokemon } from '@/types/pokemon';
 import HelpModal from './HelpModal';
 import SettingsModal from './SettingsModal';
-import './GameHeader.css';
 import GenSelect from './GenSelect';
+import './GameHeader.css';
 
 interface GameHeaderProps {
   onPokemonSelect: (pokemon: Pokemon) => void;
@@ -34,6 +34,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   targetPokemon,
   guessCount,
   disabled = false,
+  onGenerationsChange
 }) => {
   const [randomGuessesRemaining, setRandomGuessesRemaining] = useState(5);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -222,6 +223,12 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             />
           </div>
         </div>
+
+        <div className="right-controls">
+          <div className="generations-container">
+            <GenSelect onGenerationsChange={onGenerationsChange} />
+          </div>
+        </div>
       </div>
 
       {targetPokemon && gameState === 'won' && isWinMessageOpen && (
@@ -255,14 +262,13 @@ const GameHeader: React.FC<GameHeaderProps> = ({
               </div>
             </div>
             <div className="win-message-pokemon-sprites-shiny">
-            <Image
-              src={targetPokemon.sprite_shiny} 
-              alt={`${targetPokemon.name} shiny sprite`} 
-              width={90}
-              height={90}
-              priority
-            />
-            
+              <Image
+                src={targetPokemon.sprite_shiny} 
+                alt={`${targetPokemon.name} shiny sprite`} 
+                width={90}
+                height={90}
+                priority
+              />
             </div>
           </div>
         </div>
@@ -277,8 +283,6 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         isOpen={isSettingsModalOpen} 
         onClose={() => setIsSettingsModalOpen(false)} 
       />
-
-      
     </div>
   );
 };

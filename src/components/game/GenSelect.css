@@ -18,8 +18,8 @@
   }
   
   .gen-button {
-    width: 24px;
-    height: 24px;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -27,7 +27,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
     color: rgba(255, 255, 255, 0.6);
-    font-size: 0.75rem;
+    font-size: 1.4rem;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -46,7 +46,7 @@
   }
   
   .gen-button.all {
-    font-size: 0.65rem;
+    font-size: 1.10rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
