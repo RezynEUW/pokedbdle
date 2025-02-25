@@ -7,9 +7,14 @@ import './GenSelect.css';
 interface GenSelectProps {
   onGenerationsChange: (gens: number[]) => void;
   selectedGenerations?: number[];
+  disabled?: boolean;
 }
 
-const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGenerations: externalSelectedGens }) => {
+const GenSelect: React.FC<GenSelectProps> = ({ 
+  onGenerationsChange, 
+  selectedGenerations: externalSelectedGens,
+  disabled = false 
+}) => {
   // Keep track of the last value we received from props to avoid infinite loops
   const lastExternalGensRef = useRef<number[]>([]);
   
@@ -50,6 +55,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
   }, [selectedGens, onGenerationsChange]);
 
   const toggleGeneration = (gen: number) => {
+    if (disabled) return;
+    
     isUserChange.current = true;
     setSelectedGens(prev => {
       const newGens = prev.includes(gen)
@@ -67,6 +74,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
   };
 
   const handleSelectAll = () => {
+    if (disabled) return;
+    
     isUserChange.current = true;
     const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
     setSelectedGens(allGens);
@@ -76,7 +85,7 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
   const isSelected = (gen: number) => selectedGens.includes(gen);
 
   return (
-    <div className="gen-select">
+    <div className={`gen-select ${disabled ? 'disabled' : ''}`}>
       <div className="gen-grid">
         {/* Row 1: Gens 1-5 */}
         {[1, 2, 3, 4, 5].map(gen => (
@@ -84,7 +93,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
             key={gen}
             className={`gen-button ${isSelected(gen) ? 'selected' : ''}`}
             onClick={() => toggleGeneration(gen)}
-            title={`Generation ${gen}`}
+            title={`Generation ${gen}${disabled ? ' (Disabled during completed game)' : ''}`}
+            disabled={disabled}
           >
             {gen}
           </button>
@@ -95,7 +105,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
             key={gen}
             className={`gen-button ${isSelected(gen) ? 'selected' : ''}`}
             onClick={() => toggleGeneration(gen)}
-            title={`Generation ${gen}`}
+            title={`Generation ${gen}${disabled ? ' (Disabled during completed game)' : ''}`}
+            disabled={disabled}
           >
             {gen}
           </button>
@@ -103,7 +114,8 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGene
         <button
           className={`gen-button all ${selectedGens.length === 9 ? 'selected' : ''}`}
           onClick={handleSelectAll}
-          title="All Generations"
+          title={`All Generations${disabled ? ' (Disabled during completed game)' : ''}`}
+          disabled={disabled}
         >
           All
         </button>

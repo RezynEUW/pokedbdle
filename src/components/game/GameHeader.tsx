@@ -43,6 +43,9 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isWinMessageOpen, setIsWinMessageOpen] = useState(true);
   
+  // Determine if generation selection should be disabled
+  const isGenSelectDisabled = gameState !== 'playing';
+  
   useEffect(() => {
     if (gameState === 'won') {
       setIsWinMessageOpen(true);
@@ -231,6 +234,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
             <GenSelect 
               onGenerationsChange={onGenerationsChange}
               selectedGenerations={selectedGenerations}
+              disabled={isGenSelectDisabled}
             />
           </div>
         </div>

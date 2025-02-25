@@ -99,11 +99,14 @@
   letter-spacing: 0.02em;
 }
 
+/* Fixed loading spinner positioning */
 .loading-spinner {
   position: absolute;
   right: 16px;
-  top: 50%;
+  top: 10px;
   transform: translateY(-50%);
+  pointer-events: none; /* Prevent it from interfering with clicks */
+  z-index: 2;
 }
 
 .spinner {
@@ -135,13 +138,14 @@
 }
 
 @keyframes spin {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;

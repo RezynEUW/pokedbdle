@@ -67,7 +67,20 @@ export default function Home() {
       // Save the generations used for this game
       saveGameGenerations(gens);
 
-      // Determine how to load the game state
+      // If we're loading with new generations, don't use saved state
+      if (generations) {
+        // Reset the game state and guesses
+        setTargetPokemon(data.pokemon);
+        setGuesses([]);
+        setGameState('playing');
+        
+        // Reset the streak updated ref for the new game
+        streakUpdatedRef.current = false;
+        gameCompletedRef.current = false;
+        return;
+      }
+
+      // Only use saved state if not changing generations
       if (savedGameState) {
         const parsedState = JSON.parse(savedGameState);
 
@@ -124,11 +137,12 @@ export default function Home() {
       guesses,
       streak,
       gameState,
-      targetPokemonId: targetPokemon.id
+      targetPokemonId: targetPokemon.id,
+      generations: selectedGenerations // Save the current generations
     };
 
     localStorage.setItem('pokedle-game-state', JSON.stringify(gameStateToSave));
-  }, [guesses, gameState, streak, targetPokemon]);
+  }, [guesses, gameState, streak, targetPokemon, selectedGenerations]);
 
   // Save streak and game state to localStorage - only once per game
   useEffect(() => {
@@ -140,6 +154,10 @@ export default function Home() {
       // Get current hour for API consistency
       const hour = new Date().getHours();
 
+      // Check if streak was already updated today
+      const today = new Date().toDateString();
+      const lastStreakDate = localStorage.getItem('pokedle-last-streak-date');
+      
       // Update API that game is completed
       fetch(`/api/daily/complete?hour=${hour}`, {
         method: 'POST',
@@ -152,19 +170,26 @@ export default function Home() {
         }),
       }).catch(err => console.error('Failed to update completion status:', err));
 
-      if (gameState === 'won') {
-        // Calculate new streak before saving
-        const newStreak = streak + 1;
-        setStreak(newStreak);
-        localStorage.setItem('pokedle-streak', newStreak.toString());
-      } else {
-        // Reset streak on loss
-        setStreak(0);
-        localStorage.setItem('pokedle-streak', '0');
+      // Only update streak if it hasn't been updated today
+      if (lastStreakDate !== today) {
+        if (gameState === 'won') {
+          // Calculate new streak before saving
+          const newStreak = streak + 1;
+          setStreak(newStreak);
+          localStorage.setItem('pokedle-streak', newStreak.toString());
+          // Record today's date for streak update
+          localStorage.setItem('pokedle-last-streak-date', today);
+        } else {
+          // Reset streak on loss
+          setStreak(0);
+          localStorage.setItem('pokedle-streak', '0');
+          // Record today's date for streak update
+          localStorage.setItem('pokedle-last-streak-date', today);
+        }
       }
 
       // Record today's date regardless of win/loss
-      localStorage.setItem('pokedle-last-played', new Date().toDateString());
+      localStorage.setItem('pokedle-last-played', today);
       // Mark streak as updated to prevent multiple updates
       streakUpdatedRef.current = true;
     }
@@ -225,24 +250,32 @@ export default function Home() {
     // Reset local state
     setGuesses([]);
     setGameState('playing');
+    streakUpdatedRef.current = false;
+    gameCompletedRef.current = false;
 
-    // Trigger a page reload to fetch a new daily Pokemon
-    window.location.reload();
-  }, []);
+    // Fetch new Pokémon with current generations
+    fetchDailyPokemon();
+  }, [fetchDailyPokemon]);
 
   const handleGenerationsChange = useCallback((generations: number[]) => {
+    // Only allow generation changes if the game is not complete
+    if (gameState !== 'playing') return;
+    
     // Save the selected generations
     saveSelectedGenerations(generations);
     setSelectedGenerations(generations);
     
-    // If game is in progress, reset guesses
-    if (guesses.length > 0 && gameState === 'playing') {
-      setGuesses([]);
-    }
+    // Completely reset the game state, including localStorage
+    localStorage.removeItem('pokedle-game-state');
+    setGuesses([]);
+    setGameState('playing');
+    streakUpdatedRef.current = false;
+    gameCompletedRef.current = false;
     
-    // Fetch new Pokémon with the selected generations
+    // Fetch new Pokémon with the selected generations 
+    // Pass the generations to ensure we don't use saved state
     fetchDailyPokemon(generations);
-  }, [fetchDailyPokemon, gameState, guesses.length]);
+  }, [fetchDailyPokemon, gameState]);
 
   if (error) {
     return (
