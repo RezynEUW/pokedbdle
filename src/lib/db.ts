@@ -8,17 +8,9 @@ if (!process.env.DATABASE_URL) {
 // Create and export the SQL template tag
 export const sql = neon(process.env.DATABASE_URL);
 
-// More specific type for database rows
+// Type for our database rows
 export interface DbRow {
   name: string;
   id: number;
-  // Use a more restrictive type instead of any
-  [key: string]: string | number | boolean | null;
-}
-
-// Alternative approach: use a generic type parameter
-export interface GenericDbRow<T = Record<string, string | number | boolean | null>> {
-  name: string;
-  id: number;
-  additionalFields?: T;
+  [key: string]: any;
 }

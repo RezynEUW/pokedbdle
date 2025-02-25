@@ -15,7 +15,7 @@ export default function Home() {
   const [streak, setStreak] = useState<number>(0);
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGlobalDaily, setIsGlobalDaily] = useState(true);
+  const [, setIsGlobalDaily] = useState(true);
   const [selectedGenerations, setSelectedGenerations] = useState<number[]>([]);
 
   // Use refs to track game state persistence
@@ -318,11 +318,6 @@ export default function Home() {
 
         {targetPokemon ? (
           <div className="game-result-container">
-            {!isGlobalDaily && (
-              <div className="custom-daily-notice">
-                You&apos;re playing with a Pokémon from your selected generations (Gen {selectedGenerations.join(', ')}).
-              </div>
-            )}
             <GuessGrid guesses={guesses} target={targetPokemon} />
           </div>
         ) : (
