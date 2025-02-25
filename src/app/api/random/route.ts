@@ -1,15 +1,25 @@
-// src/app/api/random/route.ts
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { getIdRangesForGenerations } from '@/lib/utils/generations';
 
 // Initialize neon outside the handler for better performance
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: Request) {
   try {
-    // Get already guessed Pokémon IDs from query params (if any)
+    // Get query parameters
     const { searchParams } = new URL(request.url);
     const excludeIds = searchParams.get('exclude')?.split(',') || [];
+    const generations = searchParams.get('generations')?.split(',').map(Number) || 
+      Array.from({ length: 9 }, (_, i) => i + 1);
+    
+    // Get ID ranges for the selected generations
+    const genRanges = getIdRangesForGenerations(generations);
+    
+    // Build the ID range condition for the query
+    const idRangeConditions = genRanges
+      .map(range => `(p.id BETWEEN ${range.start} AND ${range.end})`)
+      .join(' OR ');
     
     let query = `
       SELECT 
@@ -21,10 +31,10 @@ export async function GET(request: Request) {
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
       LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
       LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
-      WHERE 1=1
+      WHERE (${idRangeConditions})
     `;
     
-    // Build exclusion condition if needed
+    // Add exclusion condition if needed
     if (excludeIds.length > 0) {
       // Make sure they are all valid numbers
       const validIds = excludeIds
@@ -46,7 +56,7 @@ export async function GET(request: Request) {
 
     if (!pokemon || pokemon.length === 0) {
       return NextResponse.json(
-        { error: 'No Pokémon found' },
+        { error: 'No Pokémon found for the selected generations' },
         { status: 404 }
       );
     }

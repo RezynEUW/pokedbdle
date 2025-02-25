@@ -1,7 +1,6 @@
-// src/app/api/search/route.ts
-import { neon } from '@neondatabase/serverless';  // Add this import
+import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
-import { Pokemon } from '@/types/pokemon';
+import { getIdRangesForGenerations } from '@/lib/utils/generations';
 
 // Initialize neon outside the handler for better performance
 const sql = neon(process.env.DATABASE_URL!);
@@ -9,13 +8,24 @@ const sql = neon(process.env.DATABASE_URL!);
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q')?.toLowerCase();
+  const generations = searchParams.get('generations')?.split(',').map(Number) || 
+    Array.from({ length: 9 }, (_, i) => i + 1);
 
   if (!query) {
     return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
   }
 
   try {
-    const pokemon = await sql`
+    // Get ID ranges for the selected generations
+    const genRanges = getIdRangesForGenerations(generations);
+    
+    // Build the ID range condition for the query
+    const idRangeConditions = genRanges
+      .map(range => `(p.id BETWEEN ${range.start} AND ${range.end})`)
+      .join(' OR ');
+    
+    // Build and execute the search query
+    const searchQuery = `
       SELECT 
         p.*,
         array_agg(DISTINCT pt.type_name) as types,
@@ -25,10 +35,13 @@ export async function GET(request: Request) {
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
       LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
       LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
-      WHERE p.name ILIKE ${`%${query}%`}
+      WHERE p.name ILIKE '%${query}%'
+      AND (${idRangeConditions})
       GROUP BY p.id
       LIMIT 10
     `;
+
+    const pokemon = await sql(searchQuery);
 
     return NextResponse.json(pokemon);
   } catch (error) {
