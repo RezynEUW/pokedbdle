@@ -5,6 +5,7 @@ import GameHeader from '@/components/game/GameHeader';
 import GuessGrid from '@/components/game/GuessGrid';
 import { Pokemon } from '@/types/pokemon';
 import { getSelectedGenerations, saveSelectedGenerations, saveGameGenerations } from '@/lib/game/storage';
+import Footer from '@/components/ui/Footer';
 
 export default function Home() {
   const [guesses, setGuesses] = useState<Pokemon[]>([]);
@@ -330,6 +331,7 @@ export default function Home() {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

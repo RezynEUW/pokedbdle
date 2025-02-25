@@ -1,0 +1,137 @@
+/* src/components/ui/Footer.css */
+.site-footer {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 2rem 1rem;
+    margin-top: 20rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+  
+  .footer-section {
+    padding: 0 1rem;
+  }
+  
+  .footer-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #fff;
+    position: relative;
+    display: inline-block;
+  }
+  
+  .footer-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      #4ade80,
+      #60a5fa,
+      #a78bfa
+    );
+  }
+  
+  .footer-section p {
+    margin-bottom: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  /* Improved link styling for all sections */
+  .footer-section a {
+    color: #60a5fa;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    position: relative;
+    padding-bottom: 1px;
+    border-bottom: 1px dotted rgba(96, 165, 250, 0.5);
+  }
+  
+  .footer-section a:hover {
+    color: #4ade80;
+    border-bottom-color: #4ade80;
+  }
+  
+  /* Tech Stack Styling */
+  .tech-stack {
+    margin-top: 0.75rem;
+  }
+  
+  .tech-stack h4 {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+  }
+  
+  .tech-stack ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .tech-stack li {
+    background: linear-gradient(
+      135deg,
+      rgba(74, 222, 128, 0.2),
+      rgba(96, 165, 250, 0.2) 50%,
+      rgba(167, 139, 250, 0.2)
+    );
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px; /* Pill shape */
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+  
+  .tech-stack li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(
+      135deg,
+      rgba(74, 222, 128, 0.3),
+      rgba(96, 165, 250, 0.3) 50%,
+      rgba(167, 139, 250, 0.3)
+    );
+  }
+  
+  .copyright {
+    margin-top: 1.5rem;
+    opacity: 0.7;
+    font-size: 0.85rem;
+  }
+  
+  @media (max-width: 768px) {
+    .footer-content {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .footer-section {
+      padding: 0 0.5rem;
+    }
+    
+    /* Make tech stack horizontal on mobile */
+    .tech-stack ul {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+  }

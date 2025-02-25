@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { PokemonSearch } from './PokemonSearch';
 import { Pokemon } from '@/types/pokemon';
 import HelpModal from './HelpModal';
-import SettingsModal from './SettingsModal';
+// import SettingsModal from './SettingsModal';
 import GenSelect from './GenSelect';
 import './GameHeader.css';
 
@@ -40,7 +40,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
 }) => {
   const [randomGuessesRemaining, setRandomGuessesRemaining] = useState(5);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  // const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isWinMessageOpen, setIsWinMessageOpen] = useState(true);
   
   // Determine if generation selection should be disabled
@@ -176,7 +176,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
               </svg>
             </button>
             
-            <button 
+            {/* <button 
               className="icon-btn settings-btn" 
               onClick={() => setIsSettingsModalOpen(true)}
               title="Settings"
@@ -195,7 +195,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                 <circle cx="12" cy="12" r="3"></circle>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
               </svg>
-            </button>
+            </button> */}
             
             <button 
               className="icon-btn reset-btn" 
@@ -288,10 +288,10 @@ const GameHeader: React.FC<GameHeaderProps> = ({
         onClose={() => setIsHelpModalOpen(false)} 
       />
       
-      <SettingsModal 
+      {/* <SettingsModal 
         isOpen={isSettingsModalOpen} 
         onClose={() => setIsSettingsModalOpen(false)} 
-      />
+      /> */}
     </div>
   );
 };
