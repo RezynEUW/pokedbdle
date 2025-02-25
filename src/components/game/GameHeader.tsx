@@ -21,6 +21,7 @@ interface GameHeaderProps {
   guessCount: number;
   disabled?: boolean;
   onGenerationsChange: (gens: number[]) => void;
+  selectedGenerations?: number[];
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
@@ -34,7 +35,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   targetPokemon,
   guessCount,
   disabled = false,
-  onGenerationsChange
+  onGenerationsChange,
+  selectedGenerations = []
 }) => {
   const [randomGuessesRemaining, setRandomGuessesRemaining] = useState(5);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -226,7 +228,10 @@ const GameHeader: React.FC<GameHeaderProps> = ({
 
         <div className="right-controls">
           <div className="generations-container">
-            <GenSelect onGenerationsChange={onGenerationsChange} />
+            <GenSelect 
+              onGenerationsChange={onGenerationsChange}
+              selectedGenerations={selectedGenerations}
+            />
           </div>
         </div>
       </div>

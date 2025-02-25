@@ -1,21 +1,56 @@
-// /src/components/game/GenSelect.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { saveSelectedGenerations } from '@/lib/game/storage';
 import './GenSelect.css';
 
 interface GenSelectProps {
   onGenerationsChange: (gens: number[]) => void;
+  selectedGenerations?: number[];
 }
 
-const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange }) => {
+const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange, selectedGenerations: externalSelectedGens }) => {
+  // Keep track of the last value we received from props to avoid infinite loops
+  const lastExternalGensRef = useRef<number[]>([]);
+  
   const [selectedGens, setSelectedGens] = useState<number[]>(() => {
+    // Initialize with provided generations, fallback to saved generations or all
+    if (externalSelectedGens && externalSelectedGens.length > 0) {
+      lastExternalGensRef.current = [...externalSelectedGens];
+      return externalSelectedGens;
+    }
     // Initialize with all generations selected (1-9)
     const saved = localStorage.getItem('pokedle-generations');
-    return saved ? JSON.parse(saved) : Array.from({ length: 9 }, (_, i) => i + 1);
+    const initialGens = saved ? JSON.parse(saved) : Array.from({ length: 9 }, (_, i) => i + 1);
+    lastExternalGensRef.current = [...initialGens];
+    return initialGens;
   });
 
+  // Track if this is a user-initiated change
+  const isUserChange = useRef(false);
+
+  // Update internal state when external props change, but only if they're different
+  useEffect(() => {
+    if (externalSelectedGens && 
+        JSON.stringify(externalSelectedGens) !== JSON.stringify(lastExternalGensRef.current)) {
+      lastExternalGensRef.current = [...externalSelectedGens];
+      setSelectedGens(externalSelectedGens);
+      isUserChange.current = false;
+    }
+  }, [externalSelectedGens]);
+
+  // Only notify parent about changes when they come from user interaction
+  useEffect(() => {
+    if (isUserChange.current && 
+        JSON.stringify(selectedGens) !== JSON.stringify(lastExternalGensRef.current)) {
+      lastExternalGensRef.current = [...selectedGens];
+      onGenerationsChange(selectedGens);
+      isUserChange.current = false;
+    }
+  }, [selectedGens, onGenerationsChange]);
+
   const toggleGeneration = (gen: number) => {
+    isUserChange.current = true;
     setSelectedGens(prev => {
       const newGens = prev.includes(gen)
         ? prev.filter(g => g !== gen)
@@ -26,17 +61,16 @@ const GenSelect: React.FC<GenSelectProps> = ({ onGenerationsChange }) => {
         return prev;
       }
       
-      localStorage.setItem('pokedle-generations', JSON.stringify(newGens));
-      onGenerationsChange(newGens);
+      saveSelectedGenerations(newGens);
       return newGens;
     });
   };
 
   const handleSelectAll = () => {
+    isUserChange.current = true;
     const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
     setSelectedGens(allGens);
-    localStorage.setItem('pokedle-generations', JSON.stringify(allGens));
-    onGenerationsChange(allGens);
+    saveSelectedGenerations(allGens);
   };
 
   const isSelected = (gen: number) => selectedGens.includes(gen);

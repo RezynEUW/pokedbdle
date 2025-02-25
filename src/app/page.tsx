@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import GameHeader from '@/components/game/GameHeader';
 import GuessGrid from '@/components/game/GuessGrid';
 import { Pokemon } from '@/types/pokemon';
+import { getSelectedGenerations, saveSelectedGenerations, saveGameGenerations } from '@/lib/game/storage';
 
 export default function Home() {
   const [guesses, setGuesses] = useState<Pokemon[]>([]);
@@ -13,78 +14,105 @@ export default function Home() {
   const [streak, setStreak] = useState<number>(0);
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGlobalDaily, setIsGlobalDaily] = useState(true);
+  const [selectedGenerations, setSelectedGenerations] = useState<number[]>([]);
 
   // Use refs to track game state persistence
   const streakUpdatedRef = useRef(false);
   const gameCompletedRef = useRef(false);
 
-  // Load the daily Pokémon and game state from localStorage
+  // Initialize selected generations on mount
   useEffect(() => {
-    const fetchDailyPokemon = async () => {
-      try {
-        // Get current hour to help determine which daily Pokémon to show
-        const now = new Date();
-        const hour = now.getHours();
-
-        // Retrieve saved game state
-        const savedGameState = localStorage.getItem('pokedle-game-state');
-        const today = now.toDateString();
-
-        // Fetch daily Pokemon
-        const response = await fetch(`/api/daily?hour=${hour}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch daily pokemon');
-        }
-        const data = await response.json();
-        if (!data.pokemon) {
-          throw new Error('No pokemon data received');
-        }
-
-        // Set yesterday's Pokemon
-        if (data.yesterdayPokemon) {
-          setYesterdaysPokemon(data.yesterdayPokemon);
-        }
-
-        // Determine how to load the game state
-        if (savedGameState) {
-          const parsedState = JSON.parse(savedGameState);
-
-          // Check if saved state is from today
-          if (parsedState.date === today) {
-            // Restore game state
-            setTargetPokemon(data.pokemon);
-            setGuesses(parsedState.guesses || []);
-            setStreak(parsedState.streak);
-
-            // Restore game completion status
-            if (parsedState.gameState !== 'playing') {
-              setGameState(parsedState.gameState);
-              streakUpdatedRef.current = true;
-              gameCompletedRef.current = true;
-            }
-            return;
-          }
-        }
-
-        // First-time play or new day
-        setTargetPokemon(data.pokemon);
-
-        // Load streak from localStorage
-        const savedStreak = localStorage.getItem('pokedle-streak') || '0';
-        setStreak(parseInt(savedStreak));
-
-        // Reset game state references
-        streakUpdatedRef.current = false;
-        gameCompletedRef.current = false;
-
-      } catch (error) {
-        console.error('Error fetching target pokemon:', error);
-        setError('Failed to load the daily Pokemon. Please try refreshing.');
-      }
-    };
-
-    fetchDailyPokemon();
+    const generations = getSelectedGenerations();
+    setSelectedGenerations(generations);
   }, []);
+
+  // Load the daily Pokémon and game state from localStorage
+  const fetchDailyPokemon = useCallback(async (generations?: number[]) => {
+    try {
+      setIsLoading(true);
+      // Get current hour to help determine which daily Pokémon to show
+      const now = new Date();
+      const hour = now.getHours();
+      const gens = generations || selectedGenerations;
+
+      // Retrieve saved game state
+      const savedGameState = localStorage.getItem('pokedle-game-state');
+      const today = now.toDateString();
+
+      // Fetch daily Pokemon with selected generations
+      const params = new URLSearchParams({
+        hour: hour.toString(),
+        generations: gens.join(',')
+      });
+      
+      const response = await fetch(`/api/daily?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch daily pokemon');
+      }
+      
+      const data = await response.json();
+      if (!data.pokemon) {
+        throw new Error('No pokemon data received');
+      }
+
+      // Set yesterday's Pokemon
+      if (data.yesterdayPokemon) {
+        setYesterdaysPokemon(data.yesterdayPokemon);
+      }
+
+      // Store whether this is the global daily or a generation-specific one
+      setIsGlobalDaily(data.isGlobalDaily || false);
+
+      // Save the generations used for this game
+      saveGameGenerations(gens);
+
+      // Determine how to load the game state
+      if (savedGameState) {
+        const parsedState = JSON.parse(savedGameState);
+
+        // Check if saved state is from today
+        if (parsedState.date === today) {
+          // Restore game state
+          setTargetPokemon(data.pokemon);
+          setGuesses(parsedState.guesses || []);
+          setStreak(parsedState.streak);
+
+          // Restore game completion status
+          if (parsedState.gameState !== 'playing') {
+            setGameState(parsedState.gameState);
+            streakUpdatedRef.current = true;
+            gameCompletedRef.current = true;
+          }
+          return;
+        }
+      }
+
+      // First-time play or new day
+      setTargetPokemon(data.pokemon);
+
+      // Load streak from localStorage
+      const savedStreak = localStorage.getItem('pokedle-streak') || '0';
+      setStreak(parseInt(savedStreak));
+
+      // Reset game state references
+      streakUpdatedRef.current = false;
+      gameCompletedRef.current = false;
+
+    } catch (error) {
+      console.error('Error fetching target pokemon:', error);
+      setError('Failed to load the daily Pokemon. Please try refreshing.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedGenerations]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (selectedGenerations.length > 0) {
+      fetchDailyPokemon();
+    }
+  }, [fetchDailyPokemon, selectedGenerations]);
 
   // Save game state to localStorage
   useEffect(() => {
@@ -168,9 +196,14 @@ export default function Home() {
       // Get the IDs of already guessed Pokémon
       const guessedIds = guesses.map(g => g.id);
 
-      // Build the URL with excluded IDs
-      const excludeParam = guessedIds.length > 0 ? `?exclude=${guessedIds.join(',')}` : '';
-      const response = await fetch(`/api/random${excludeParam}`);
+      // Build the URL with excluded IDs and selected generations
+      const params = new URLSearchParams();
+      if (guessedIds.length > 0) {
+        params.set('exclude', guessedIds.join(','));
+      }
+      params.set('generations', selectedGenerations.join(','));
+      
+      const response = await fetch(`/api/random?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch random pokemon');
 
@@ -182,7 +215,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [targetPokemon, guesses, gameState, handleGuess, isLoading]);
+  }, [targetPokemon, guesses, gameState, handleGuess, isLoading, selectedGenerations]);
 
   // Reset game function for when game is completed
   const handleResetGame = useCallback(() => {
@@ -198,10 +231,18 @@ export default function Home() {
   }, []);
 
   const handleGenerationsChange = useCallback((generations: number[]) => {
-    // Here you can handle generation changes
-    console.log('Selected generations:', generations);
-    // You might want to reset the game or update available Pokémon
-  }, []);
+    // Save the selected generations
+    saveSelectedGenerations(generations);
+    setSelectedGenerations(generations);
+    
+    // If game is in progress, reset guesses
+    if (guesses.length > 0 && gameState === 'playing') {
+      setGuesses([]);
+    }
+    
+    // Fetch new Pokémon with the selected generations
+    fetchDailyPokemon(generations);
+  }, [fetchDailyPokemon, gameState, guesses.length]);
 
   if (error) {
     return (
@@ -238,10 +279,16 @@ export default function Home() {
           guessCount={guesses.length}
           disabled={!targetPokemon || gameState !== 'playing' || isLoading}
           onGenerationsChange={handleGenerationsChange}
+          selectedGenerations={selectedGenerations}
         />
 
         {targetPokemon ? (
           <div className="game-result-container">
+            {!isGlobalDaily && (
+              <div className="custom-daily-notice">
+                You&apos;re playing with a Pokémon from your selected generations (Gen {selectedGenerations.join(', ')}).
+              </div>
+            )}
             <GuessGrid guesses={guesses} target={targetPokemon} />
           </div>
         ) : (
