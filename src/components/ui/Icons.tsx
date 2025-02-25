@@ -1,4 +1,3 @@
-// src/components/ui/Icons.tsx
 import React from 'react';
 
 interface IconProps {
@@ -110,7 +109,8 @@ export function CloseIcon({
   );
 }
 
-export default {
+// Replace the default export with an named export to resolve the ESLint warning
+export const Icons = {
   HelpIcon,
   SettingsIcon,
   StatsIcon,
