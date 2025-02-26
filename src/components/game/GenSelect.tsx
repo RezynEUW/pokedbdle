@@ -86,6 +86,7 @@ const GenSelect: React.FC<GenSelectProps> = ({
 
   return (
     <div className={`gen-select ${disabled ? 'disabled' : ''}`}>
+      <div className="generation-label">Generation</div>
       <div className="gen-grid">
         {/* Row 1: Gens 1-5 */}
         {[1, 2, 3, 4, 5].map(gen => (

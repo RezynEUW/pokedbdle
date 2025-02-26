@@ -4,6 +4,20 @@
   align-items: center;
   justify-content: flex-end;
   padding: 4px;
+  position: relative;
+}
+
+.generation-label {
+  position: absolute;
+  left: -36px;
+  top: -10px;
+  transform-origin: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.05);
+  white-space: nowrap;
 }
 
 .gen-grid {
@@ -71,4 +85,18 @@
   background: rgba(74, 222, 128, 0.1);
   border-color: rgba(74, 222, 128, 0.2);
   color: rgba(74, 222, 128, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .generation-label {
+    left: -25px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .generation-label {
+    display: none; /* Hide on very small screens */
+  }
 }
