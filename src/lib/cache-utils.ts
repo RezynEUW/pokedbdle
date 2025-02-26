@@ -31,9 +31,9 @@ export function shortCacheHeaders(maxAgeSeconds: number = 60) {
  * @param options Additional options for the response
  */
 export function createNoCacheResponse(
-  data: any, 
-  options: { status?: number; headers?: Record<string, string> } = {}
-) {
+    data: Record<string, unknown>, 
+    options: { status?: number; headers?: Record<string, string> } = {}
+  ) {
   const { status = 200, headers = {} } = options;
   
   return NextResponse.json(data, {
@@ -52,10 +52,10 @@ export function createNoCacheResponse(
  * @param additionalData Any additional data to include
  */
 export function createErrorResponse(
-  message: string, 
-  status: number = 500, 
-  additionalData: any = {}
-) {
+    message: string, 
+    status: number = 500, 
+    additionalData: Record<string, unknown> = {}
+  ) {
   return NextResponse.json(
     { 
       error: message, 

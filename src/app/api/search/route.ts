@@ -1,19 +1,31 @@
-import { queryWithRetry } from '@/lib/db';
-import { createNoCacheResponse, createErrorResponse } from '@/lib/cache-utils';
+import { neon } from '@neondatabase/serverless';
+import { NextResponse } from 'next/server';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
-import { NextRequest } from 'next/server';
 
-export async function GET(request: NextRequest) {
+// Initialize neon outside the handler for better performance
+const sql = neon(process.env.DATABASE_URL!);
+
+export async function GET(request: Request) {
+  // Set cache control headers to prevent caching
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    'Pragma': 'no-cache'
+  };
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q')?.toLowerCase();
   const generations = searchParams.get('generations')?.split(',').map(Number) || 
     Array.from({ length: 9 }, (_, i) => i + 1);
   
-  // Cache busting timestamp (ignored in logic, but used in the client)
+  // Ignore timestamp parameter (used for cache busting)
   // const timestamp = searchParams.get('t');
 
   if (!query) {
-    return createErrorResponse('Query parameter is required', 400);
+    return NextResponse.json(
+      { error: 'Query parameter is required' }, 
+      { status: 400, headers }
+    );
   }
 
   try {
@@ -42,16 +54,15 @@ export async function GET(request: NextRequest) {
       LIMIT 10
     `;
 
-    // Use queryWithRetry with parameterized query
-    const pokemon = await queryWithRetry(
-      searchQuery, 
-      [`%${query}%`],
-      { retries: 3 }
-    );
+    // Use parameterized query with % placeholders added programmatically
+    const pokemon = await sql(searchQuery, [`%${query}%`]);
 
-    return createNoCacheResponse(pokemon || []);
+    return NextResponse.json(pokemon, { headers });
   } catch (error) {
     console.error('Error searching pokemon:', error);
-    return createErrorResponse('Failed to search pokemon', 500);
+    return NextResponse.json(
+      { error: 'Failed to search pokemon' }, 
+      { status: 500, headers }
+    );
   }
 }

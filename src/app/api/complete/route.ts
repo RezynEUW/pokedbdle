@@ -1,5 +1,5 @@
-import { getSql, queryWithRetry } from '@/lib/db';
-import { NO_CACHE_HEADERS, createErrorResponse, createNoCacheResponse } from '@/lib/cache-utils';
+// src/app/api/daily/complete/route.ts
+import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 
@@ -21,16 +21,17 @@ export async function POST(request: NextRequest) {
     
     const { completed, won } = await request.json();
     
-    // Use the queryWithRetry function instead of direct neon call
-    await queryWithRetry(`
+    const sql = neon(process.env.DATABASE_URL!);
+    await sql`
       UPDATE daily_pokemon
-      SET is_completed = $1, won = $2
-      WHERE date = $3
-    `, [completed, won, dateToUse], { retries: 3 });
+      SET is_completed = ${completed}, won = ${won}
+      WHERE date = ${dateToUse}
+    `;
     
-    return createNoCacheResponse({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating completion status:', error);
-    return createErrorResponse('Failed to update completion status', 500);
+    return NextResponse.json({ error: 'Failed to update completion status' }, { status: 500 });
   }
 }
+

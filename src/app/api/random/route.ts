@@ -1,9 +1,12 @@
-import { queryWithRetry } from '@/lib/db';
-import { createNoCacheResponse, createErrorResponse } from '@/lib/cache-utils';
+import { neon } from '@neondatabase/serverless';
+import { NextResponse } from 'next/server';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
-import { NextRequest } from 'next/server';
 
-export async function GET(request: NextRequest) {
+// Initialize neon outside the handler for better performance
+const sql = neon(process.env.DATABASE_URL!);
+
+export async function GET(request: Request) {
+  
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -19,8 +22,7 @@ export async function GET(request: NextRequest) {
       .map(range => `(p.id BETWEEN ${range.start} AND ${range.end})`)
       .join(' OR ');
     
-    let queryParams: any[] = [];
-    let queryString = `
+    let query = `
       SELECT 
         p.*,
         array_agg(DISTINCT pt.type_name) as types,
@@ -41,31 +43,31 @@ export async function GET(request: NextRequest) {
         .filter(id => !isNaN(id));
       
       if (validIds.length > 0) {
-        const placeholders = validIds.map((_, i) => `$${i + 1}`).join(',');
-        queryString += ` AND p.id NOT IN (${placeholders})`;
-        queryParams = validIds;
+        query += ` AND p.id NOT IN (${validIds.join(',')})`;
       }
     }
     
-    queryString += `
+    query += `
       GROUP BY p.id
       ORDER BY RANDOM()
       LIMIT 1
     `;
 
-    const pokemon = await queryWithRetry(
-      queryString, 
-      queryParams,
-      { retries: 3 }
-    );
+    const pokemon = await sql(query);
 
     if (!pokemon || pokemon.length === 0) {
-      return createErrorResponse('No Pokémon found for the selected generations', 404);
+      return NextResponse.json(
+        { error: 'No Pokémon found for the selected generations' },
+        { status: 404 }
+      );
     }
 
-    return createNoCacheResponse(pokemon[0]);
+    return NextResponse.json(pokemon[0]);
   } catch (error) {
     console.error('Error fetching random Pokémon:', error);
-    return createErrorResponse('Failed to fetch random Pokémon', 500);
+    return NextResponse.json(
+      { error: 'Failed to fetch random Pokémon' },
+      { status: 500 }
+    );
   }
 }
