@@ -17,9 +17,11 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0); // Default to first item
+  const [lastSuccessfulUpdate, setLastSuccessfulUpdate] = useState(Date.now());
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   // Store guessedPokemon IDs in a ref to avoid dependency issues
   const guessedPokemonIdsRef = useRef(new Set<number>());
@@ -29,6 +31,26 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
     guessedPokemonIdsRef.current = new Set(guessedPokemon.map(p => p.id));
   }, [guessedPokemon]);
 
+  // Check for stale connections
+  useEffect(() => {
+    const checkConnection = () => {
+      const now = Date.now();
+      // If it's been more than 5 minutes since the last successful search
+      if (now - lastSuccessfulUpdate > 5 * 60 * 1000) {
+        console.log('Search connection may be stale, refreshing...');
+        // Force a refresh of the connection
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+          abortControllerRef.current = null;
+        }
+        setLastSuccessfulUpdate(now);
+      }
+    };
+    
+    const interval = setInterval(checkConnection, 60 * 1000); // Check every minute
+    return () => clearInterval(interval);
+  }, [lastSuccessfulUpdate]);
+
   useEffect(() => {
     // Reset suggestion refs array when suggestions change
     suggestionRefs.current = suggestions.map(() => null);
@@ -36,6 +58,8 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
     // Automatically select the first suggestion when suggestions change
     if (suggestions.length > 0) {
       setSelectedIndex(0);
+      // Update last successful update timestamp when we get valid suggestions
+      setLastSuccessfulUpdate(Date.now());
     } else {
       setSelectedIndex(-1);
     }
@@ -65,9 +89,30 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
     }
 
     const fetchPokemon = async () => {
+      // Cancel any previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Create a new AbortController for this request
+      abortControllerRef.current = new AbortController();
+      
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        // Add timestamp as cache buster
+        const timestamp = Date.now();
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}&t=${timestamp}`, 
+          { 
+            signal: abortControllerRef.current.signal,
+            // Set a fetch timeout
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          }
+        );
+        
         if (!response.ok) throw new Error('Search failed');
         
         const data = await response.json();
@@ -75,17 +120,32 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         
         setSuggestions(filteredData);
         setShowSuggestions(filteredData.length > 0);
+        setLastSuccessfulUpdate(Date.now());
       } catch (error) {
-        console.error('Search error:', error);
+        // Only log if it's not an abort error
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Search error:', error);
+        }
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
         setIsLoading(false);
+        // Clear the abort controller reference if it's the current one
+        if (abortControllerRef.current && abortControllerRef.current.signal.aborted) {
+          abortControllerRef.current = null;
+        }
       }
     };
 
     const debounce = setTimeout(fetchPokemon, 300);
-    return () => clearTimeout(debounce);
+    return () => {
+      clearTimeout(debounce);
+      // Abort the fetch if component unmounts or query changes
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [query, filterGuessedPokemon]);
 
   const handleSelect = (pokemon: Pokemon) => {

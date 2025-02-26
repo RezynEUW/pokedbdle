@@ -231,17 +231,26 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
               {guess?.evolution_stage ? guess.evolution_stage.replace('stage', 'Stage ') : '-'}
             </div>
 
-            <div className={`stat-card ${comparisonResults.height.isCorrect ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${
+              comparisonResults.height.isCorrect ? 'correct' : 
+              Math.abs(guess?.height - target.height) <= 3 ? 'partial' : 'incorrect'
+            }`}>
               {guess?.height ? `${(guess.height / 10).toFixed(1)}m` : '-'}
               {comparisonResults.height.hint && <span className="hint">{comparisonResults.height.hint}</span>}
             </div>
 
-            <div className={`stat-card ${comparisonResults.weight.isCorrect ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${
+              comparisonResults.weight.isCorrect ? 'correct' : 
+              Math.abs(guess?.weight - target.weight) <= 100 ? 'partial' : 'incorrect'
+            }`}>
               {guess?.weight ? `${(guess.weight / 10).toFixed(1)}kg` : '-'}
               {comparisonResults.weight.hint && <span className="hint">{comparisonResults.weight.hint}</span>}
             </div>
 
-            <div className={`stat-card ${comparisonResults.bst.isCorrect ? 'correct' : 'incorrect'}`}>
+            <div className={`stat-card ${
+              comparisonResults.bst.isCorrect ? 'correct' : 
+              Math.abs(guess?.base_stat_total - target.base_stat_total) <= 50 ? 'partial' : 'incorrect'
+            }`}>
               {guess?.base_stat_total || '-'}
               {comparisonResults.bst.hint && <span className="hint">{comparisonResults.bst.hint}</span>}
             </div>

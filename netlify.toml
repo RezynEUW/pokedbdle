@@ -12,4 +12,4 @@
 
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
-  NEXT_PUBLIC_IS_NETLIFY = "true"
+  NEXT_PUBLIC_IS_NETLIFY = "true" 

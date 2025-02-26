@@ -7,6 +7,7 @@ import { Pokemon } from '@/types/pokemon';
 import HelpModal from './HelpModal';
 // import SettingsModal from './SettingsModal';
 import GenSelect from './GenSelect';
+import ShareButton from './ShareButton';
 import './GameHeader.css';
 
 interface GameHeaderProps {
@@ -268,6 +269,11 @@ const GameHeader: React.FC<GameHeaderProps> = ({
               </div>
               <div className="win-message-guesses">
                 Guessed in {guessCount} {guessCount === 1 ? 'try' : 'tries'}
+                <ShareButton 
+                  guesses={guessedPokemon} 
+                  target={targetPokemon} 
+                  guessCount={guessCount} 
+                />
               </div>
             </div>
             <div className="win-message-pokemon-sprites-shiny">

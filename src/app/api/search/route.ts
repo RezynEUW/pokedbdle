@@ -6,13 +6,26 @@ import { getIdRangesForGenerations } from '@/lib/utils/generations';
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: Request) {
+  // Set cache control headers to prevent caching
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    'Pragma': 'no-cache'
+  };
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q')?.toLowerCase();
   const generations = searchParams.get('generations')?.split(',').map(Number) || 
     Array.from({ length: 9 }, (_, i) => i + 1);
+  
+  // Ignore timestamp parameter (used for cache busting)
+  // const timestamp = searchParams.get('t');
 
   if (!query) {
-    return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Query parameter is required' }, 
+      { status: 400, headers }
+    );
   }
 
   try {
@@ -24,7 +37,7 @@ export async function GET(request: Request) {
       .map(range => `(p.id BETWEEN ${range.start} AND ${range.end})`)
       .join(' OR ');
     
-    // Build and execute the search query
+    // Use parameterized query to prevent SQL injection
     const searchQuery = `
       SELECT 
         p.*,
@@ -35,17 +48,21 @@ export async function GET(request: Request) {
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
       LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
       LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
-      WHERE p.name ILIKE '%${query}%'
+      WHERE p.name ILIKE $1
       AND (${idRangeConditions})
       GROUP BY p.id
       LIMIT 10
     `;
 
-    const pokemon = await sql(searchQuery);
+    // Use parameterized query with % placeholders added programmatically
+    const pokemon = await sql(searchQuery, [`%${query}%`]);
 
-    return NextResponse.json(pokemon);
+    return NextResponse.json(pokemon, { headers });
   } catch (error) {
     console.error('Error searching pokemon:', error);
-    return NextResponse.json({ error: 'Failed to search pokemon' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to search pokemon' }, 
+      { status: 500, headers }
+    );
   }
 }
