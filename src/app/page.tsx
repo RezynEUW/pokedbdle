@@ -21,6 +21,9 @@ export default function Home() {
   // Use refs to track game state persistence
   const streakUpdatedRef = useRef(false);
   const gameCompletedRef = useRef(false);
+  
+  // Ref to track generations change timer
+  const generationsChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Memoize safeLocalStorage to maintain referential stability
   const safeLocalStorage = useMemo(() => ({
@@ -297,31 +300,50 @@ export default function Home() {
     }, 100);
   }, [fetchDailyPokemon, safeLocalStorage]);
 
-  // Generations change handler
+  // Generations change handler with debouncing
   const handleGenerationsChange = useCallback((generations: number[]) => {
     // Only allow generation changes if the game is not complete
     if (gameState !== 'playing') return;
     
-    // First set loading and clear target to ensure visual reset
-    setTargetPokemon(null);
-    setIsLoading(true);
-    
-    // Save the selected generations
+    // Save the selected generations immediately
     saveSelectedGenerations(generations);
     setSelectedGenerations(generations);
     
-    // Completely reset the game state, including localStorage
-    safeLocalStorage.removeItem('pokedle-game-state');
-    setGuesses([]);
-    setGameState('playing');
-    streakUpdatedRef.current = false;
-    gameCompletedRef.current = false;
+    // Clear any previous timer
+    if (generationsChangeTimerRef.current) {
+      clearTimeout(generationsChangeTimerRef.current);
+    }
     
-    // Fetch new Pokémon with a delay to ensure clean UI reset
-    setTimeout(() => {
-      fetchDailyPokemon(generations);
-    }, 100);
+    // Set a new timer for 800ms to allow for multiple quick generation changes
+    generationsChangeTimerRef.current = setTimeout(() => {
+      // First set loading and clear target to ensure visual reset
+      setTargetPokemon(null);
+      setIsLoading(true);
+      
+      // Completely reset the game state, including localStorage
+      safeLocalStorage.removeItem('pokedle-game-state');
+      setGuesses([]);
+      setGameState('playing');
+      streakUpdatedRef.current = false;
+      gameCompletedRef.current = false;
+      
+      // Fetch new Pokémon with a delay to ensure clean UI reset
+      setTimeout(() => {
+        fetchDailyPokemon(generations);
+      }, 100);
+      
+      generationsChangeTimerRef.current = null;
+    }, 800); // Delay of 800ms before resetting the game
   }, [fetchDailyPokemon, gameState, safeLocalStorage]);
+  
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (generationsChangeTimerRef.current) {
+        clearTimeout(generationsChangeTimerRef.current);
+      }
+    };
+  }, []);
 
   if (errorMessage) {
     return (
