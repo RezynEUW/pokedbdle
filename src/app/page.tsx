@@ -322,28 +322,23 @@ function HomePage() {
     // Clear any previous timer
     if (generationsChangeTimerRef.current) {
       clearTimeout(generationsChangeTimerRef.current);
+      generationsChangeTimerRef.current = null;
     }
     
-    // Set a new timer for 800ms to allow for multiple quick generation changes
-    generationsChangeTimerRef.current = setTimeout(() => {
-      // First set loading and clear target to ensure visual reset
-      setTargetPokemon(null);
-      setIsLoading(true);
-      
-      // Completely reset the game state, including localStorage
-      safeLocalStorage.removeItem('pokedle-game-state');
-      setGuesses([]);
-      setGameState('playing');
-      streakUpdatedRef.current = false;
-      gameCompletedRef.current = false;
-      
-      // Fetch new Pokémon with a delay to ensure clean UI reset
-      setTimeout(() => {
-        fetchDailyPokemon(generations);
-      }, 100);
-      
-      generationsChangeTimerRef.current = null;
-    }, 800); // Delay of 800ms before resetting the game
+    // Immediately reset and fetch without delay
+    setTargetPokemon(null);
+    setIsLoading(true);
+    
+    // Completely reset the game state, including localStorage
+    safeLocalStorage.removeItem('pokedle-game-state');
+    setGuesses([]);
+    setGameState('playing');
+    streakUpdatedRef.current = false;
+    gameCompletedRef.current = false;
+    
+    // Fetch new Pokémon immediately
+    fetchDailyPokemon(generations);
+    
   }, [fetchDailyPokemon, gameState, safeLocalStorage]);
   
   // Clean up timer on unmount
