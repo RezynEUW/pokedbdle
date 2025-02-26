@@ -1,5 +1,5 @@
-import { neon } from '@neondatabase/serverless';
-import { NextResponse } from 'next/server';
+import { getSql, queryWithRetry } from '@/lib/db';
+import { createNoCacheResponse, createErrorResponse } from '@/lib/cache-utils';
 import { NextRequest } from 'next/server';
 import { getDailyPokemon } from '@/lib/game/dailyPokemon';
 
@@ -27,22 +27,23 @@ export async function GET(request: NextRequest) {
     const todayPokemon = await getDailyPokemon({ generations });
     
     // Check if the Pokémon we got is the global daily
-    const sql = neon(process.env.DATABASE_URL!);
-    const [globalDaily] = await sql`
-      SELECT pokemon_id FROM daily_pokemon WHERE date = ${today}
-    `;
+    const globalDaily = await queryWithRetry(`
+      SELECT pokemon_id FROM daily_pokemon WHERE date = $1
+    `, [today]);
     
-    const isGlobalDaily = globalDaily && globalDaily.pokemon_id === todayPokemon.id;
+    const isGlobalDaily = globalDaily && 
+                        globalDaily.length > 0 && 
+                        globalDaily[0].pokemon_id === todayPokemon.id;
     
     // Fetch yesterday's Pokémon 
     // (no need to filter by generation for yesterday's Pokémon)
-    const [yesterdayEntry] = await sql`
-      SELECT pokemon_id FROM daily_pokemon WHERE date = ${yesterdayDate}
-    `;
+    const yesterdayEntry = await queryWithRetry(`
+      SELECT pokemon_id FROM daily_pokemon WHERE date = $1
+    `, [yesterdayDate]);
     
     let yesterdayPokemon = null;
     
-    if (yesterdayEntry) {
+    if (yesterdayEntry && yesterdayEntry.length > 0) {
       // Fetch the complete Pokémon data
       const query = `
         WITH highest_stats AS (
@@ -74,21 +75,23 @@ export async function GET(request: NextRequest) {
         LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
         LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
         LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
-        WHERE p.id = ${yesterdayEntry.pokemon_id}
+        WHERE p.id = $1
         GROUP BY p.id, hs.highest_stats
       `;
       
-      const [pokemon] = await sql(query);
-      yesterdayPokemon = pokemon;
+      const pokemon = await queryWithRetry(query, [yesterdayEntry[0].pokemon_id]);
+      if (pokemon && pokemon.length > 0) {
+        yesterdayPokemon = pokemon[0];
+      }
     }
 
-    return NextResponse.json({ 
+    return createNoCacheResponse({ 
       pokemon: todayPokemon,
       yesterdayPokemon,
       isGlobalDaily
     });
   } catch (error) {
     console.error('Error getting daily pokemon:', error);
-    return NextResponse.json({ error: 'Failed to get daily pokemon' }, { status: 500 });
+    return createErrorResponse('Failed to get daily pokemon', 500);
   }
 }
