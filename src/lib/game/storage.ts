@@ -5,6 +5,9 @@ const GAME_STATE_KEY = 'pokedle-game-state';
 const LAST_PLAYED_KEY = 'pokedle-last-played';
 const GENERATIONS_KEY = 'pokedle-generations';
 
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Local function definition
 function isNewDay(lastPlayedDate?: string | null): boolean {
   if (!lastPlayedDate) return true;
@@ -20,6 +23,8 @@ function isNewDay(lastPlayedDate?: string | null): boolean {
 }
 
 export function saveGameState(gameState: GameState) {
+  if (!isBrowser) return;
+  
   try {
     localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
     localStorage.setItem(LAST_PLAYED_KEY, new Date().toISOString());
@@ -29,6 +34,8 @@ export function saveGameState(gameState: GameState) {
 }
 
 export function loadGameState(): GameState | null {
+  if (!isBrowser) return null;
+  
   try {
     const lastPlayedDate = localStorage.getItem(LAST_PLAYED_KEY);
     if (isNewDay(lastPlayedDate)) {
@@ -45,6 +52,8 @@ export function loadGameState(): GameState | null {
 }
 
 export function clearGameState() {
+  if (!isBrowser) return;
+  
   try {
     localStorage.removeItem(GAME_STATE_KEY);
     localStorage.removeItem(LAST_PLAYED_KEY);
@@ -55,6 +64,11 @@ export function clearGameState() {
 
 // Generation selection functions
 export function getSelectedGenerations(): number[] {
+  if (!isBrowser) {
+    // Default to all generations when running on server
+    return Array.from({ length: 9 }, (_, i) => i + 1);
+  }
+  
   try {
     const saved = localStorage.getItem(GENERATIONS_KEY);
     return saved ? JSON.parse(saved) : Array.from({ length: 9 }, (_, i) => i + 1);
@@ -65,6 +79,8 @@ export function getSelectedGenerations(): number[] {
 }
 
 export function saveSelectedGenerations(generations: number[]): void {
+  if (!isBrowser) return;
+  
   try {
     // Ensure at least one generation is selected
     const validGens = generations.length > 0 ? 
@@ -79,6 +95,8 @@ export function saveSelectedGenerations(generations: number[]): void {
 
 // Add function to check if generations have changed from last game
 export function haveGenerationsChanged(currentGenerations: number[]): boolean {
+  if (!isBrowser) return false;
+  
   try {
     const lastGameState = loadGameState();
     if (!lastGameState) return false;
@@ -103,6 +121,8 @@ export function haveGenerationsChanged(currentGenerations: number[]): boolean {
 
 // Save the generations used for the current game
 export function saveGameGenerations(generations: number[]): void {
+  if (!isBrowser) return;
+  
   try {
     localStorage.setItem('pokedle-last-generations', JSON.stringify(generations));
   } catch (error) {

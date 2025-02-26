@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import GameHeader from '@/components/game/GameHeader';
 import GuessGrid from '@/components/game/GuessGrid';
 import { Pokemon } from '@/types/pokemon';
 import { getSelectedGenerations, saveSelectedGenerations, saveGameGenerations } from '@/lib/game/storage';
 import Footer from '@/components/ui/Footer';
 
-export default function Home() {
+// Main component with all functionality
+function HomePage() {
+  // Initialize selectedGenerations with default value to avoid SSR issues
   const [guesses, setGuesses] = useState<Pokemon[]>([]);
   const [targetPokemon, setTargetPokemon] = useState<Pokemon | null>(null);
   const [yesterdaysPokemon, setYesterdaysPokemon] = useState<Pokemon | null>(null);
@@ -16,7 +19,10 @@ export default function Home() {
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isLoading, setIsLoading] = useState(true);
   const [, setIsGlobalDaily] = useState(true);
-  const [selectedGenerations, setSelectedGenerations] = useState<number[]>([]);
+  const [selectedGenerations, setSelectedGenerations] = useState<number[]>(
+    // Default value for SSR
+    Array.from({ length: 9 }, (_, i) => i + 1)
+  );
 
   // Use refs to track game state persistence
   const streakUpdatedRef = useRef(false);
@@ -162,7 +168,8 @@ export default function Home() {
 
   // Save game state to localStorage
   useEffect(() => {
-    if (!targetPokemon) return;
+    // Skip during SSR and when targetPokemon is not set
+    if (typeof window === 'undefined' || !targetPokemon) return;
 
     // Only save state when game state changes or guesses are made
     const gameStateToSave = {
@@ -179,6 +186,9 @@ export default function Home() {
 
   // Save streak and game state to localStorage - only once per game
   useEffect(() => {
+    // Skip during SSR
+    if (typeof window === 'undefined') return;
+    
     // Only update if the game state changed from playing to won/lost
     if ((gameState === 'won' || gameState === 'lost') && !streakUpdatedRef.current) {
       // Store the game completion status
@@ -397,3 +407,8 @@ export default function Home() {
     </div>
   );
 }
+
+// Use Next.js dynamic import to skip SSR for this component
+export default dynamic(() => Promise.resolve(HomePage), {
+  ssr: false
+});
