@@ -8,89 +8,119 @@ interface ShareButtonProps {
   guesses: Pokemon[];
   target: Pokemon;
   guessCount: number;
+  selectedGenerations?: number[];
 }
 
-const ShareButton: React.FC<ShareButtonProps> = ({ guesses, target, guessCount }) => {
+const ShareButton: React.FC<ShareButtonProps> = ({ 
+  guesses, 
+  target, 
+  guessCount, 
+  selectedGenerations = []
+}) => {
   const [showToast, setShowToast] = useState(false);
 
   const generateShareText = () => {
     const today = new Date();
     const dateStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     
-    // Create the header line
-    let shareText = `Pokédle ${dateStr} - ${guessCount}/${guessCount} guesses\n\n`;
+    // Create the simplified header line
+    let shareText = `Pokédle ${dateStr} - ${guessCount} guesses`;
     
-    // Add emoji grid representation of guesses - only include actual guesses, not the images
-    const actualGuesses = guesses.filter(g => g.id !== 0); // Filter out any placeholders
+    // Add generations info - check if all generations (1-9) are selected
+    const allGens = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const sortedGens = [...selectedGenerations].sort((a, b) => a - b);
+    
+    // Convert to strings for comparison
+    const allGensStr = JSON.stringify(allGens);
+    const sortedGensStr = JSON.stringify(sortedGens);
+    
+    if (selectedGenerations.length > 0) {
+      // Check if all generations are selected (1-9)
+      if (allGensStr === sortedGensStr || 
+          (selectedGenerations.length === 9 && 
+           selectedGenerations.every(gen => gen >= 1 && gen <= 9))) {
+        // All generations
+        shareText += ` - Classic`;
+      } else {
+        // Only some generations
+        shareText += ` - (Gen ${sortedGens.join(',')})`;
+      }
+    }
+    
+    shareText += '\n\n';
+    
+    // Add emoji grid representation of guesses - only include actual guesses, not images
+    // Filter and reverse to show latest guess at the top
+    const actualGuesses = guesses
+      .filter(g => g.id !== 0) // Filter out any placeholders
+      .slice() // Create a copy to avoid mutating the original array
+      .reverse(); // Reverse so the latest/correct guess is at the top
     
     actualGuesses.forEach((guess) => {
       // For each guess, create a row of emojis representing the comparison
       let emojiRow = '';
       
-      // Primary type match (first type in the array)
-      const guessPrimaryType = guess.types[0] || '';
-      const targetPrimaryType = target.types[0] || '';
-      const targetSecondaryType = target.types[1] || '';
-
-      if (guessPrimaryType === targetPrimaryType) {
+      // COLUMN 1: Types - Combined into a single column
+      const guessTypes = guess.types || [];
+      const targetTypes = target.types || [];
+      
+      // Check for exact match (both types match exactly)
+      const exactMatch = 
+        (guessTypes.length === targetTypes.length) && 
+        guessTypes.every(type => targetTypes.includes(type)) &&
+        targetTypes.every(type => guessTypes.includes(type));
+      
+      // Check for partial match (at least one type matches)
+      const partialMatch = !exactMatch && guessTypes.some(type => targetTypes.includes(type));
+      
+      if (exactMatch) {
         emojiRow += '🟩';
-      } else if (targetSecondaryType && guessPrimaryType === targetSecondaryType) {
+      } else if (partialMatch) {
         emojiRow += '🟨';
       } else {
         emojiRow += '⬛';
       }
       
-      // Secondary type match (second type in the array, if any)
-      const guessSecondaryType = guess.types[1] || '';
-      
-      if (guessSecondaryType && guessSecondaryType === targetSecondaryType) {
-        emojiRow += '🟩';
-      } else if (guessSecondaryType && guessSecondaryType === targetPrimaryType) {
-        emojiRow += '🟨';
-      } else {
-        emojiRow += '⬛';
-      }
-      
-      // Generation match
+      // COLUMN 2: Generation match
       emojiRow += guess.generation === target.generation ? '🟩' : '⬛';
       
-      // Color match
+      // COLUMN 3: Color match
       emojiRow += guess.color === target.color ? '🟩' : '⬛';
       
-      // Evolution stage
+      // COLUMN 4: Evolution stage
       emojiRow += guess.evolution_stage === target.evolution_stage ? '🟩' : '⬛';
       
-      // Height with solid value margin (0.3 meters)
+      // COLUMN 5: Height with partial match within 0.3 meters (3 decimeters)
       if (guess.height === target.height) {
         emojiRow += '🟩';
       } else {
-        // Use solid value margin of 0.3 meters
+        // Calculate if within margin
         const heightDifference = Math.abs(guess.height - target.height);
-        if (heightDifference <= 0.3) {
+        if (heightDifference <= 3) {
           emojiRow += '🟨'; // Partial match (yellow)
         } else {
           emojiRow += '⬛'; // No match
         }
       }
       
-      // Weight with solid value margin (10 kg)
+      // COLUMN 6: Weight with partial match within 10 kg (100 hectograms)
       if (guess.weight === target.weight) {
         emojiRow += '🟩';
       } else {
-        // Use solid value margin of 10 kg
+        // Calculate if within margin
         const weightDifference = Math.abs(guess.weight - target.weight);
-        if (weightDifference <= 10) {
+        if (weightDifference <= 100) {
           emojiRow += '🟨'; // Partial match (yellow)
         } else {
           emojiRow += '⬛'; // No match
         }
       }
       
-      // Base stat total with solid value margin (50 points)
+      // COLUMN 7: Base stat total with partial match within 50 points
       if (guess.base_stat_total === target.base_stat_total) {
         emojiRow += '🟩';
       } else {
-        // Use solid value margin of 50 points
+        // Calculate if within margin
         const bstDifference = Math.abs(guess.base_stat_total - target.base_stat_total);
         if (bstDifference <= 50) {
           emojiRow += '🟨'; // Partial match (yellow)
@@ -99,17 +129,17 @@ const ShareButton: React.FC<ShareButtonProps> = ({ guesses, target, guessCount }
         }
       }
       
-      // Abilities (matching at least one)
-      const hasMatchingAbility = guess.abilities.some(ability => 
-        target.abilities.includes(ability)
-      );
-      emojiRow += hasMatchingAbility ? '🟩' : '⬛';
-      
-      // Egg Groups (matching at least one)
+      // COLUMN 8: Egg Groups (matching at least one)
       const hasMatchingEggGroup = guess.egg_groups.some(group => 
         target.egg_groups.includes(group)
       );
       emojiRow += hasMatchingEggGroup ? '🟩' : '⬛';
+      
+      // COLUMN 9: Abilities (matching at least one)
+      const hasMatchingAbility = guess.abilities.some(ability => 
+        target.abilities.includes(ability)
+      );
+      emojiRow += hasMatchingAbility ? '🟩' : '⬛';
       
       // Add this row to the share text
       shareText += emojiRow + '\n';

@@ -273,6 +273,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
                   guesses={guessedPokemon} 
                   target={targetPokemon} 
                   guessCount={guessCount} 
+                  selectedGenerations={selectedGenerations} 
                 />
               </div>
             </div>
