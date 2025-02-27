@@ -67,9 +67,9 @@ function HomePage() {
   const fetchDailyPokemon = useCallback(async (generations?: number[], forceRefresh = false) => {
     try {
       setIsLoading(true);
-      // Get current hour to help determine which daily Pokémon to show
+      // Get the current date in YYYY-MM-DD format
       const now = new Date();
-      const hour = now.getHours();
+      const localDate = now.toISOString().split('T')[0];
       const gens = generations || selectedGenerations;
 
       // Only check localStorage if not forcing a refresh
@@ -87,7 +87,7 @@ function HomePage() {
             if (parsedState.date === today) {
               // We still need to fetch the target Pokémon for this day
               const params = new URLSearchParams({
-                hour: hour.toString(),
+                date: localDate,
                 generations: gens.join(','),
                 t: Date.now().toString() // Cache busting
               });
@@ -130,9 +130,9 @@ function HomePage() {
         }
       }
 
-      // Fetch daily Pokemon with selected generations and cache busting
+      // Fetch daily Pokemon with selected generations, local date, and cache busting
       const params = new URLSearchParams({
-        hour: hour.toString(),
+        date: localDate,
         generations: gens.join(','),
         t: Date.now().toString() // Add timestamp to prevent caching
       });
@@ -217,15 +217,15 @@ function HomePage() {
       // Store the game completion status
       gameCompletedRef.current = true;
 
-      // Get current hour for API consistency
-      const hour = new Date().getHours();
+      // Get local date for API consistency
+      const localDate = new Date().toISOString().split('T')[0];
 
       // Check if streak was already updated today
       const today = new Date().toDateString();
       const lastStreakDate = safeLocalStorage.getItem('pokedle-last-streak-date');
       
       // Update API that game is completed
-      fetch(`/api/daily/complete?hour=${hour}`, {
+      fetch(`/api/daily/complete?date=${localDate}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -423,6 +423,7 @@ function HomePage() {
           disabled={!targetPokemon || gameState !== 'playing' || isLoading}
           onGenerationsChange={handleGenerationsChange}
           selectedGenerations={selectedGenerations}
+          isGlobalDaily={isGlobalDaily}
         />
 
         {targetPokemon ? (

@@ -23,6 +23,8 @@ interface GameHeaderProps {
   disabled?: boolean;
   onGenerationsChange: (gens: number[]) => void;
   selectedGenerations?: number[];
+  // Add this line:
+  isGlobalDaily?: boolean;
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({
