@@ -1,5 +1,5 @@
-import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
+import { dbConnectionManager } from '@/lib/db/connectionManager';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,9 +10,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const sql = neon(process.env.DATABASE_URL!);
-
-    const pokemon = await sql`
+    const query = `
       WITH highest_stats AS (
         SELECT 
           pokemon_id,
@@ -41,9 +39,11 @@ export async function GET(request: Request) {
       LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
       LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
       LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
-      WHERE LOWER(p.name) = LOWER(${name})
+      WHERE LOWER(p.name) = LOWER($1)
       GROUP BY p.id, hs.highest_stats
     `;
+
+    const pokemon = await dbConnectionManager.query(query, [name]);
 
     if (!pokemon.length) {
       return NextResponse.json({ error: 'Pokemon not found' }, { status: 404 });

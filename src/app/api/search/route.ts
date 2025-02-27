@@ -1,9 +1,6 @@
-import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
-
-// Initialize neon outside the handler for better performance
-const sql = neon(process.env.DATABASE_URL!);
+import { executeQuery } from '@/lib/db/connectionManager';
 
 export async function GET(request: Request) {
   // Set cache control headers to prevent caching
@@ -17,9 +14,6 @@ export async function GET(request: Request) {
   const query = searchParams.get('q')?.toLowerCase();
   const generations = searchParams.get('generations')?.split(',').map(Number) || 
     Array.from({ length: 9 }, (_, i) => i + 1);
-  
-  // Ignore timestamp parameter (used for cache busting)
-  // const timestamp = searchParams.get('t');
 
   if (!query) {
     return NextResponse.json(
@@ -54,8 +48,8 @@ export async function GET(request: Request) {
       LIMIT 10
     `;
 
-    // Use parameterized query with % placeholders added programmatically
-    const pokemon = await sql(searchQuery, [`%${query}%`]);
+    // Use our connection manager instead of direct neon connection
+    const pokemon = await executeQuery(searchQuery, [`%${query}%`]);
 
     return NextResponse.json(pokemon, { headers });
   } catch (error) {

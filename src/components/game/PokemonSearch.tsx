@@ -9,9 +9,10 @@ interface PokemonSearchProps {
   onSelect: (pokemon: Pokemon) => void;
   disabled?: boolean;
   guessedPokemon?: Pokemon[]; // Array of already guessed Pokémon
+  selectedGenerations: number[]; // Add this prop
 }
 
-export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] }: PokemonSearchProps) {
+export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [], selectedGenerations }: PokemonSearchProps) {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Pokemon[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,10 +100,10 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
       
       setIsLoading(true);
       try {
-        // Add timestamp as cache buster
+        // Add timestamp as cache buster and include generations
         const timestamp = Date.now();
         const response = await fetch(
-          `/api/search?q=${encodeURIComponent(query)}&t=${timestamp}`, 
+          `/api/search?q=${encodeURIComponent(query)}&generations=${selectedGenerations.join(',')}&t=${timestamp}`, 
           { 
             signal: abortControllerRef.current.signal,
             // Set a fetch timeout
@@ -146,7 +147,7 @@ export function PokemonSearch({ onSelect, disabled = false, guessedPokemon = [] 
         abortControllerRef.current = null;
       }
     };
-  }, [query, filterGuessedPokemon]);
+  }, [query, filterGuessedPokemon, selectedGenerations]); // Added selectedGenerations dependency
 
   const handleSelect = (pokemon: Pokemon) => {
     onSelect(pokemon);

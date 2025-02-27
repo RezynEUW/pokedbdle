@@ -1,6 +1,6 @@
-import { neon } from '@neondatabase/serverless';
 import { Pokemon } from '@/types/pokemon';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
+import { dbConnectionManager } from '@/lib/db/connectionManager';
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -12,7 +12,6 @@ interface DailyPokemonOptions {
 }
 
 export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promise<Pokemon> {
-  const sql = neon(process.env.DATABASE_URL!);
   const today = new Date();
   const dateSeed = today.getFullYear() * 10000 + 
                    (today.getMonth() + 1) * 100 + 
@@ -46,7 +45,7 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
       WHERE ${idRangeConditions}
     `;
     
-    const [countResult] = await sql(countQuery);
+    const [countResult] = await dbConnectionManager.query(countQuery);
     const totalPokemon = parseInt(countResult.total_pokemon);
     
     if (totalPokemon === 0) {
@@ -111,7 +110,7 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
         p.id, hs.highest_stats, hs.highest_stat_value
     `;
 
-    const [dailyPokemon] = await sql(pokemonQuery);
+    const [dailyPokemon] = await dbConnectionManager.query(pokemonQuery);
 
     return {
       id: dailyPokemon.id,
@@ -140,14 +139,14 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
 
 // Gets the global daily Pokémon from database, or creates it if it doesn't exist
 async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
-  const sql = neon(process.env.DATABASE_URL!);
   const today = new Date().toISOString().split('T')[0];
   
   try {
     // Check if we already have a daily Pokémon
-    const [existingDaily] = await sql`
-      SELECT pokemon_id FROM daily_pokemon WHERE date = ${today}
-    `;
+    const [existingDaily] = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
+      [today]
+    );
     
     if (existingDaily) {
       // Get the full Pokémon data
@@ -166,7 +165,7 @@ async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
       // Insert a random Pokémon for today
       const insertQuery = `
         INSERT INTO daily_pokemon (date, pokemon_id)
-        SELECT '${today}', id 
+        SELECT $1, id 
         FROM pokemon 
         WHERE ${idRangeCondition}
         ORDER BY RANDOM() 
@@ -174,7 +173,7 @@ async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
         RETURNING pokemon_id
       `;
       
-      const [newDaily] = await sql(insertQuery);
+      const [newDaily] = await dbConnectionManager.query(insertQuery, [today]);
       
       if (newDaily && newDaily.pokemon_id) {
         return getPokemonById(newDaily.pokemon_id);
@@ -190,8 +189,6 @@ async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
 
 // Helper function to get a Pokémon by ID
 async function getPokemonById(id: number): Promise<Pokemon> {
-  const sql = neon(process.env.DATABASE_URL!);
-  
   const query = `
     WITH max_stats AS (
       SELECT pokemon_id, MAX(base_value) as max_value
@@ -230,11 +227,11 @@ async function getPokemonById(id: number): Promise<Pokemon> {
     LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
     LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
     LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
-    WHERE p.id = ${id}
+    WHERE p.id = $1
     GROUP BY p.id, hs.highest_stats, hs.highest_stat_value
   `;
   
-  const [pokemon] = await sql(query);
+  const [pokemon] = await dbConnectionManager.query(query, [id]);
   
   return {
     id: pokemon.id,

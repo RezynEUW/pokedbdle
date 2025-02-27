@@ -1,8 +1,8 @@
-import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { getDailyPokemon } from '@/lib/game/dailyPokemon';
-import { isPokemonInGenerations, getIdRangesForGenerations } from '@/lib/utils/generations';
+import { isPokemonInGenerations } from '@/lib/utils/generations';
+import { dbConnectionManager } from '@/lib/db/connectionManager';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,12 +29,11 @@ export async function GET(request: NextRequest) {
     yesterdayDateObj.setDate(yesterdayDateObj.getDate() - 2);
     const yesterdayDate = yesterdayDateObj.toISOString().split('T')[0];
     
-    const sql = neon(process.env.DATABASE_URL!);
-    
     // First check if we have a Pokémon for "today's" date (which is yesterday's DB entry)
-    const [todayEntry] = await sql`
-      SELECT pokemon_id FROM daily_pokemon WHERE date = ${todayDate}
-    `;
+    const [todayEntry] = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
+      [todayDate]
+    );
     
     // Get the full Pokémon data if available
     let todayPokemon;
@@ -59,9 +58,10 @@ export async function GET(request: NextRequest) {
     }
     
     // Fetch yesterday's Pokémon (from 2 days ago in the DB)
-    const [yesterdayEntry] = await sql`
-      SELECT pokemon_id FROM daily_pokemon WHERE date = ${yesterdayDate}
-    `;
+    const [yesterdayEntry] = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
+      [yesterdayDate]
+    );
     
     let yesterdayPokemon = null;
     
@@ -83,8 +83,6 @@ export async function GET(request: NextRequest) {
 
 // Helper function to get a Pokémon by ID
 async function getPokemonById(id: number) {
-  const sql = neon(process.env.DATABASE_URL!);
-  
   const query = `
     WITH highest_stats AS (
       SELECT 
@@ -117,11 +115,11 @@ async function getPokemonById(id: number) {
     LEFT JOIN pokemon_abilities pa ON p.id = pa.pokemon_id
     LEFT JOIN pokemon_egg_groups peg ON p.id = peg.pokemon_id
     LEFT JOIN highest_stats hs ON p.id = hs.pokemon_id
-    WHERE p.id = ${id}
+    WHERE p.id = $1
     GROUP BY p.id, hs.highest_stats, hs.highest_stat_value
   `;
   
-  const [pokemon] = await sql(query);
+  const [pokemon] = await dbConnectionManager.query(query, [id]);
   
   return {
     id: pokemon.id,

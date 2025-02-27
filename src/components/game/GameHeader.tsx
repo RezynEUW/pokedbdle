@@ -23,7 +23,6 @@ interface GameHeaderProps {
   disabled?: boolean;
   onGenerationsChange: (gens: number[]) => void;
   selectedGenerations?: number[];
-  // Add this line:
   isGlobalDaily?: boolean;
 }
 
@@ -39,7 +38,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({
   guessCount,
   disabled = false,
   onGenerationsChange,
-  selectedGenerations = []
+  selectedGenerations = [],
+  isGlobalDaily
 }) => {
   const [randomGuessesRemaining, setRandomGuessesRemaining] = useState(5);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
@@ -228,6 +228,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
               onSelect={onPokemonSelect} 
               guessedPokemon={guessedPokemon}
               disabled={disabled || gameState !== 'playing'}
+              selectedGenerations={selectedGenerations} // Pass selected generations to PokemonSearch
             />
           </div>
         </div>

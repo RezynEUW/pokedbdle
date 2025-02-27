@@ -1,12 +1,8 @@
-import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
-
-// Initialize neon outside the handler for better performance
-const sql = neon(process.env.DATABASE_URL!);
+import { dbConnectionManager } from '@/lib/db/connectionManager';
 
 export async function GET(request: Request) {
-  
   try {
     // Get query parameters
     const { searchParams } = new URL(request.url);
@@ -53,7 +49,7 @@ export async function GET(request: Request) {
       LIMIT 1
     `;
 
-    const pokemon = await sql(query);
+    const pokemon = await dbConnectionManager.query(query);
 
     if (!pokemon || pokemon.length === 0) {
       return NextResponse.json(
