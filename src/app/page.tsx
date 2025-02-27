@@ -18,7 +18,7 @@ function HomePage() {
   const [streak, setStreak] = useState<number>(0);
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isLoading, setIsLoading] = useState(true);
-  // const [isGlobalDaily, setIsGlobalDaily] = useState(true);
+  const [isGlobalDaily, setIsGlobalDaily] = useState(true);
   const [selectedGenerations, setSelectedGenerations] = useState<number[]>(
     // Default value for SSR
     Array.from({ length: 9 }, (_, i) => i + 1)
@@ -107,8 +107,8 @@ function HomePage() {
                 setYesterdaysPokemon(data.yesterdayPokemon);
               }
 
-              // // Store whether this is the global daily or a generation-specific one
-              // setIsGlobalDaily(data.isGlobalDaily || false);
+              // Store whether this is the global daily or a generation-specific one
+              setIsGlobalDaily(data.isGlobalDaily || false);
 
               // Restore game state
               setTargetPokemon(data.pokemon);
@@ -152,8 +152,8 @@ function HomePage() {
         setYesterdaysPokemon(data.yesterdayPokemon);
       }
 
-      // // Store whether this is the global daily or a generation-specific one
-      // setIsGlobalDaily(data.isGlobalDaily || false);
+      // Store whether this is the global daily or a generation-specific one
+      setIsGlobalDaily(data.isGlobalDaily || false);
 
       // Save the generations used for this game
       saveGameGenerations(gens);
