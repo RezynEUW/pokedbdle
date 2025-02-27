@@ -18,7 +18,7 @@ function HomePage() {
   const [streak, setStreak] = useState<number>(0);
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing');
   const [isLoading, setIsLoading] = useState(true);
-  const [, setIsGlobalDaily] = useState(true);
+  // const [isGlobalDaily, setIsGlobalDaily] = useState(true);
   const [selectedGenerations, setSelectedGenerations] = useState<number[]>(
     // Default value for SSR
     Array.from({ length: 9 }, (_, i) => i + 1)
@@ -30,6 +30,9 @@ function HomePage() {
   
   // Ref to track generations change timer
   const generationsChangeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Ref to track if a reset is in progress
+  const resetInProgressRef = useRef(false);
 
   // Memoize safeLocalStorage to maintain referential stability
   const safeLocalStorage = useMemo(() => ({
@@ -61,7 +64,7 @@ function HomePage() {
   }, []);
 
   // Load the daily Pokémon and game state from localStorage
-  const fetchDailyPokemon = useCallback(async (generations?: number[]) => {
+  const fetchDailyPokemon = useCallback(async (generations?: number[], forceRefresh = false) => {
     try {
       setIsLoading(true);
       // Get current hour to help determine which daily Pokémon to show
@@ -69,14 +72,69 @@ function HomePage() {
       const hour = now.getHours();
       const gens = generations || selectedGenerations;
 
-      // Retrieve saved game state (safely)
-      const savedGameState = safeLocalStorage.getItem('pokedle-game-state');
-      const today = now.toDateString();
+      // Only check localStorage if not forcing a refresh
+      if (!forceRefresh) {
+        // Retrieve saved game state (safely)
+        const savedGameState = safeLocalStorage.getItem('pokedle-game-state');
+        const today = now.toDateString();
 
-      // Fetch daily Pokemon with selected generations
+        // Only use saved state if not changing generations or forcing refresh
+        if (savedGameState && !generations && !forceRefresh) {
+          try {
+            const parsedState = JSON.parse(savedGameState);
+
+            // Check if saved state is from today
+            if (parsedState.date === today) {
+              // We still need to fetch the target Pokémon for this day
+              const params = new URLSearchParams({
+                hour: hour.toString(),
+                generations: gens.join(','),
+                t: Date.now().toString() // Cache busting
+              });
+              
+              const response = await fetch(`/api/daily?${params}`);
+              if (!response.ok) {
+                throw new Error('Failed to fetch daily pokemon');
+              }
+              
+              const data = await response.json();
+              if (!data.pokemon) {
+                throw new Error('No pokemon data received');
+              }
+
+              // Set yesterday's Pokemon
+              if (data.yesterdayPokemon) {
+                setYesterdaysPokemon(data.yesterdayPokemon);
+              }
+
+              // // Store whether this is the global daily or a generation-specific one
+              // setIsGlobalDaily(data.isGlobalDaily || false);
+
+              // Restore game state
+              setTargetPokemon(data.pokemon);
+              setGuesses(parsedState.guesses || []);
+              setStreak(parsedState.streak);
+
+              // Restore game completion status
+              if (parsedState.gameState !== 'playing') {
+                setGameState(parsedState.gameState);
+                streakUpdatedRef.current = true;
+                gameCompletedRef.current = true;
+              }
+              setIsLoading(false);
+              return;
+            }
+          } catch (parseError) {
+            console.error('Failed to parse saved game state:', parseError);
+          }
+        }
+      }
+
+      // Fetch daily Pokemon with selected generations and cache busting
       const params = new URLSearchParams({
         hour: hour.toString(),
-        generations: gens.join(',')
+        generations: gens.join(','),
+        t: Date.now().toString() // Add timestamp to prevent caching
       });
       
       const response = await fetch(`/api/daily?${params}`);
@@ -94,68 +152,33 @@ function HomePage() {
         setYesterdaysPokemon(data.yesterdayPokemon);
       }
 
-      // Store whether this is the global daily or a generation-specific one
-      setIsGlobalDaily(data.isGlobalDaily || false);
+      // // Store whether this is the global daily or a generation-specific one
+      // setIsGlobalDaily(data.isGlobalDaily || false);
 
       // Save the generations used for this game
       saveGameGenerations(gens);
 
-      // If we're loading with new generations, don't use saved state
-      if (generations) {
-        // Reset the game state and guesses
-        setTargetPokemon(data.pokemon);
-        setGuesses([]);
-        setGameState('playing');
-        
-        // Reset the streak updated ref for the new game
-        streakUpdatedRef.current = false;
-        gameCompletedRef.current = false;
-        setIsLoading(false);
-        return;
-      }
-
-      // Only use saved state if not changing generations
-      if (savedGameState) {
-        try {
-          const parsedState = JSON.parse(savedGameState);
-
-          // Check if saved state is from today
-          if (parsedState.date === today) {
-            // Restore game state
-            setTargetPokemon(data.pokemon);
-            setGuesses(parsedState.guesses || []);
-            setStreak(parsedState.streak);
-
-            // Restore game completion status
-            if (parsedState.gameState !== 'playing') {
-              setGameState(parsedState.gameState);
-              streakUpdatedRef.current = true;
-              gameCompletedRef.current = true;
-            }
-            setIsLoading(false);
-            return;
-          }
-        } catch (parseError) {
-          console.error('Failed to parse saved game state:', parseError);
-        }
-      }
-
-      // First-time play or new day
+      // Reset the game state completely
       setTargetPokemon(data.pokemon);
-
-      // Load streak from localStorage
-      const savedStreak = safeLocalStorage.getItem('pokedle-streak') || '0';
-      setStreak(parseInt(savedStreak));
-
-      // Reset game state references
+      setGuesses([]);
+      setGameState('playing');
+      
+      // Reset the streak updated ref for the new game
       streakUpdatedRef.current = false;
       gameCompletedRef.current = false;
+
+      // Load streak from localStorage (only if this is a new session)
+      if (!forceRefresh) {
+        const savedStreak = safeLocalStorage.getItem('pokedle-streak') || '0';
+        setStreak(parseInt(savedStreak));
+      }
 
     } catch (error) {
       console.error('Error fetching target pokemon:', error);
       setErrorMessage('Failed to load the daily Pokemon. Please try refreshing.');
     } finally {
       setIsLoading(false);
+      resetInProgressRef.current = false;
     }
   }, [selectedGenerations, safeLocalStorage]);
 
@@ -168,8 +191,8 @@ function HomePage() {
 
   // Save game state to localStorage
   useEffect(() => {
-    // Skip during SSR and when targetPokemon is not set
-    if (typeof window === 'undefined' || !targetPokemon) return;
+    // Skip during SSR, when targetPokemon is not set, or during reset
+    if (typeof window === 'undefined' || !targetPokemon || resetInProgressRef.current) return;
 
     // Only save state when game state changes or guesses are made
     const gameStateToSave = {
@@ -272,6 +295,7 @@ function HomePage() {
         params.set('exclude', guessedIds.join(','));
       }
       params.set('generations', selectedGenerations.join(','));
+      params.set('t', Date.now().toString()); // Cache busting
       
       const response = await fetch(`/api/random?${params}`);
 
@@ -289,31 +313,41 @@ function HomePage() {
 
   // Reset game function for when game is completed
   const handleResetGame = useCallback(() => {
-    // Important: Set the target Pokémon to null and loading to true first
-    // This forces a complete UI reset before loading new data
+    // Mark reset as in progress to prevent state updates during reset
+    resetInProgressRef.current = true;
+    
+    // First clear any pending timers
+    if (generationsChangeTimerRef.current) {
+      clearTimeout(generationsChangeTimerRef.current);
+      generationsChangeTimerRef.current = null;
+    }
+    
+    // Step 1: Set loading state and clear UI
     setTargetPokemon(null);
     setIsLoading(true);
     
-    // Clear saved game state
+    // Step 2: Clear localStorage game state
     safeLocalStorage.removeItem('pokedle-game-state');
-
-    // Reset all game state
+    
+    // Step 3: Reset all state variables in memory
     setGuesses([]);
     setGameState('playing');
     streakUpdatedRef.current = false;
     gameCompletedRef.current = false;
+    
+    // Step 4: Force a page reload to ensure everything is fresh
+    // This is the most reliable way to ensure a complete reset
+    window.location.reload();
+    
+  }, [safeLocalStorage]);
 
-    // Fetch new Pokémon with current generations after a small delay
-    // to ensure state updates have processed
-    setTimeout(() => {
-      fetchDailyPokemon();
-    }, 100);
-  }, [fetchDailyPokemon, safeLocalStorage]);
-
-  // Generations change handler with debouncing
+  // Generations change handler
   const handleGenerationsChange = useCallback((generations: number[]) => {
     // Only allow generation changes if the game is not complete
     if (gameState !== 'playing') return;
+    
+    // Mark reset as in progress
+    resetInProgressRef.current = true;
     
     // Save the selected generations immediately
     saveSelectedGenerations(generations);
@@ -325,19 +359,22 @@ function HomePage() {
       generationsChangeTimerRef.current = null;
     }
     
-    // Immediately reset and fetch without delay
+    // Step 1: Set loading state and clear UI
     setTargetPokemon(null);
     setIsLoading(true);
     
-    // Completely reset the game state, including localStorage
+    // Step 2: Clear localStorage game state
     safeLocalStorage.removeItem('pokedle-game-state');
+    
+    // Step 3: Reset all state variables in memory
     setGuesses([]);
     setGameState('playing');
     streakUpdatedRef.current = false;
     gameCompletedRef.current = false;
     
-    // Fetch new Pokémon immediately
-    fetchDailyPokemon(generations);
+    // Step 4: Fetch a new Pokémon with the new generations
+    // Pass forceRefresh=true to ensure we get a fresh pokemon
+    fetchDailyPokemon(generations, true);
     
   }, [fetchDailyPokemon, gameState, safeLocalStorage]);
   
