@@ -33,6 +33,9 @@ function HomePage() {
   
   // Ref to track if a reset is in progress
   const resetInProgressRef = useRef(false);
+  
+  // Ref to track date check interval
+  const dateCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Memoize safeLocalStorage to maintain referential stability
   const safeLocalStorage = useMemo(() => ({
@@ -62,27 +65,62 @@ function HomePage() {
       setSelectedGenerations(generations);
     }
   }, []);
+  
+  // Date change detection
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const today = new Date().toDateString();
+    // Save current date for future comparisons
+    safeLocalStorage.setItem('pokedle-current-date', today);
+    
+    // Setup interval to check for date changes
+    dateCheckIntervalRef.current = setInterval(() => {
+      const currentDate = new Date().toDateString();
+      const savedDate = safeLocalStorage.getItem('pokedle-current-date');
+      
+      // If date has changed since page load
+      if (savedDate && currentDate !== savedDate) {
+        console.log('Date changed from', savedDate, 'to', currentDate);
+        safeLocalStorage.setItem('pokedle-current-date', currentDate);
+        
+        // Clear game state for the new day
+        safeLocalStorage.removeItem('pokedle-game-state');
+        
+        // Reload the page to get the new daily Pokémon
+        window.location.reload();
+      }
+    }, 60000); // Check every minute
+    
+    // Clean up interval on unmount
+    return () => {
+      if (dateCheckIntervalRef.current) {
+        clearInterval(dateCheckIntervalRef.current);
+        dateCheckIntervalRef.current = null;
+      }
+    };
+  }, [safeLocalStorage]);
 
   // Load the daily Pokémon and game state from localStorage
   const fetchDailyPokemon = useCallback(async (generations?: number[], forceRefresh = false) => {
     try {
       setIsLoading(true);
-      // Get the current date in YYYY-MM-DD format
+      // Get the current date in local timezone YYYY-MM-DD format (not UTC)
       const now = new Date();
-      const localDate = now.toISOString().split('T')[0];
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const gens = generations || selectedGenerations;
-
+  
       // Only check localStorage if not forcing a refresh
       if (!forceRefresh) {
         // Retrieve saved game state (safely)
         const savedGameState = safeLocalStorage.getItem('pokedle-game-state');
         const today = now.toDateString();
-
+  
         // Only use saved state if not changing generations or forcing refresh
         if (savedGameState && !generations && !forceRefresh) {
           try {
             const parsedState = JSON.parse(savedGameState);
-
+  
             // Check if saved state is from today
             if (parsedState.date === today) {
               // We still need to fetch the target Pokémon for this day
@@ -101,20 +139,20 @@ function HomePage() {
               if (!data.pokemon) {
                 throw new Error('No pokemon data received');
               }
-
+  
               // Set yesterday's Pokemon
               if (data.yesterdayPokemon) {
                 setYesterdaysPokemon(data.yesterdayPokemon);
               }
-
+  
               // Store whether this is the global daily or a generation-specific one
               setIsGlobalDaily(data.isGlobalDaily || false);
-
+  
               // Restore game state
               setTargetPokemon(data.pokemon);
               setGuesses(parsedState.guesses || []);
               setStreak(parsedState.streak);
-
+  
               // Restore game completion status
               if (parsedState.gameState !== 'playing') {
                 setGameState(parsedState.gameState);
@@ -123,19 +161,23 @@ function HomePage() {
               }
               setIsLoading(false);
               return;
+            } else {
+              console.log('Saved state date different from today, fetching new Pokémon');
             }
           } catch (parseError) {
             console.error('Failed to parse saved game state:', parseError);
           }
         }
       }
-
+  
       // Fetch daily Pokemon with selected generations, local date, and cache busting
       const params = new URLSearchParams({
         date: localDate,
         generations: gens.join(','),
         t: Date.now().toString() // Add timestamp to prevent caching
       });
+      
+      console.log('Requesting Pokémon for client date:', localDate);
       
       const response = await fetch(`/api/daily?${params}`);
       if (!response.ok) {
@@ -146,18 +188,18 @@ function HomePage() {
       if (!data.pokemon) {
         throw new Error('No pokemon data received');
       }
-
+  
       // Set yesterday's Pokemon
       if (data.yesterdayPokemon) {
         setYesterdaysPokemon(data.yesterdayPokemon);
       }
-
+  
       // Store whether this is the global daily or a generation-specific one
       setIsGlobalDaily(data.isGlobalDaily || false);
-
+  
       // Save the generations used for this game
       saveGameGenerations(gens);
-
+  
       // Reset the game state completely
       setTargetPokemon(data.pokemon);
       setGuesses([]);
@@ -166,13 +208,13 @@ function HomePage() {
       // Reset the streak updated ref for the new game
       streakUpdatedRef.current = false;
       gameCompletedRef.current = false;
-
+  
       // Load streak from localStorage (only if this is a new session)
       if (!forceRefresh) {
         const savedStreak = safeLocalStorage.getItem('pokedle-streak') || '0';
         setStreak(parseInt(savedStreak));
       }
-
+  
     } catch (error) {
       console.error('Error fetching target pokemon:', error);
       setErrorMessage('Failed to load the daily Pokemon. Please try refreshing.');
@@ -217,8 +259,9 @@ function HomePage() {
       // Store the game completion status
       gameCompletedRef.current = true;
 
-      // Get local date for API consistency
-      const localDate = new Date().toISOString().split('T')[0];
+      // Get local date for API consistency in local timezone (not UTC)
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       // Check if streak was already updated today
       const today = new Date().toDateString();
@@ -378,11 +421,14 @@ function HomePage() {
     
   }, [fetchDailyPokemon, gameState, safeLocalStorage]);
   
-  // Clean up timer on unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (generationsChangeTimerRef.current) {
         clearTimeout(generationsChangeTimerRef.current);
+      }
+      if (dateCheckIntervalRef.current) {
+        clearInterval(dateCheckIntervalRef.current);
       }
     };
   }, []);

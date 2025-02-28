@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { getDailyPokemon } from '@/lib/game/dailyPokemon';
-import { isPokemonInGenerations, getIdRangesForGenerations } from '@/lib/utils/generations';
+import { isPokemonInGenerations, getIdRangesForGenerations, GENERATION_RANGES } from '@/lib/utils/generations';
 import { dbConnectionManager } from '@/lib/db/connectionManager';
 
 export async function GET(request: NextRequest) {
@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     console.log('Using today date:', todayDate);
     console.log('Using tomorrow date:', tomorrowDate);
     console.log('Using yesterday date:', yesterdayDate);
+    console.log('Selected generations:', generations);
     
     // Always check if tomorrow's Pokémon exists, and create it if not
     const [tomorrowEntry] = await dbConnectionManager.query(
@@ -62,14 +63,29 @@ export async function GET(request: NextRequest) {
     if (todayEntry) {
       console.log('Found today entry with ID:', todayEntry.pokemon_id);
       
-      // If we have a matching entry that's in the selected generations, use it
+      // Get the target Pokémon
       const targetPokemon = await getPokemonById(todayEntry.pokemon_id);
-      const isInSelectedGens = isPokemonInGenerations(targetPokemon.id, generations);
       
-      if (isInSelectedGens) {
+      // Determine which generation this Pokémon belongs to
+      const pokemonGen = GENERATION_RANGES.find(
+        range => targetPokemon.id >= range.start && targetPokemon.id <= range.end
+      )?.gen || null;
+      
+      // Add diagnostic logging
+      console.log('Target Pokemon ID:', targetPokemon.id);
+      console.log('Target Pokemon belongs to generation:', pokemonGen);
+      console.log('Selected generations:', generations);
+      const isInSelectedGens = isPokemonInGenerations(targetPokemon.id, generations);
+      console.log('Is in selected generations:', isInSelectedGens);
+      
+      // Special case: If client has at least 5 generations selected but Pokémon is not in them,
+      // force the Pokémon to be available anyway (ensures daily consistency)
+      if (isInSelectedGens || generations.length >= 5) {
+        console.log('Using database Pokémon (either in selected gens or forcing consistency)');
         todayPokemon = targetPokemon;
       } else {
         // If not in selected generations, generate a generation-specific one
+        console.log('Pokemon not in selected generations, generating alternative');
         todayPokemon = await getDailyPokemon({ generations });
         isGlobalDaily = false;
       }
@@ -79,17 +95,31 @@ export async function GET(request: NextRequest) {
       const todayPokemonId = await generatePokemonForDate(todayDate);
       if (todayPokemonId) {
         const newPokemon = await getPokemonById(todayPokemonId);
-        const isInSelectedGens = isPokemonInGenerations(newPokemon.id, generations);
         
-        if (isInSelectedGens) {
+        // Determine which generation this Pokémon belongs to
+        const pokemonGen = GENERATION_RANGES.find(
+          range => newPokemon.id >= range.start && newPokemon.id <= range.end
+        )?.gen || null;
+        
+        // Add diagnostic logging
+        console.log('New Pokemon ID:', newPokemon.id);
+        console.log('New Pokemon belongs to generation:', pokemonGen);
+        console.log('Selected generations:', generations);
+        const isInSelectedGens = isPokemonInGenerations(newPokemon.id, generations);
+        console.log('Is in selected generations:', isInSelectedGens);
+        
+        // Similar special case for new Pokémon
+        if (isInSelectedGens || generations.length >= 5) {
           todayPokemon = newPokemon;
         } else {
           // If the generated Pokémon is not in selected generations, use a generation-specific one
+          console.log('New Pokemon not in selected generations, generating alternative');
           todayPokemon = await getDailyPokemon({ generations });
           isGlobalDaily = false;
         }
       } else {
         // Fallback: use getDailyPokemon if direct generation failed
+        console.log('Failed to generate Pokemon, using fallback method');
         todayPokemon = await getDailyPokemon({ generations });
       }
     }
@@ -110,10 +140,20 @@ export async function GET(request: NextRequest) {
       console.log('No entry found for yesterday');
     }
 
+    // Log what we're returning to the client
+    console.log('Returning Pokemon ID to client:', todayPokemon.id);
+
     return NextResponse.json({ 
       pokemon: todayPokemon,
       yesterdayPokemon,
       isGlobalDaily
+    }, {
+      headers: {
+        // Add strong cache control headers to prevent caching
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error('Error getting daily pokemon:', error);

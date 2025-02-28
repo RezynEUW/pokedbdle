@@ -105,7 +105,7 @@
 /* Fixed loading spinner positioning */
 .loading-spinner {
   position: absolute;
-  right: 16px;
+  right: 32px;
   top: 10px;
   transform: translateY(-50%);
   pointer-events: none; /* Prevent it from interfering with clicks */
