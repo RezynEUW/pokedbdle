@@ -137,52 +137,101 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
   }
 }
 
-// Gets the global daily Pokémon from database, or creates it if it doesn't exist
+// In the getGlobalDailyPokemon function:
+
 async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  
+  // Calculate tomorrow's date
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  
+  console.log(`Checking for daily Pokémon - Today: ${todayStr}, Tomorrow: ${tomorrowStr}`);
   
   try {
-    // Check if we already have a daily Pokémon
-    const [existingDaily] = await dbConnectionManager.query(
+    // First, ensure both today's and tomorrow's Pokémon exist
+    
+    // Check for today's Pokémon
+    const [todayPokemon] = await dbConnectionManager.query(
       'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
-      [today]
+      [todayStr]
     );
     
-    if (existingDaily) {
-      // Get the full Pokémon data
-      return getPokemonById(existingDaily.pokemon_id);
+    // If today's Pokémon doesn't exist, create it
+    if (!todayPokemon) {
+      await generatePokemonForDate(todayStr);
+    }
+    
+    // ALWAYS check for tomorrow's Pokémon and create it if it doesn't exist
+    const [tomorrowPokemon] = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
+      [tomorrowStr]
+    );
+    
+    if (!tomorrowPokemon) {
+      await generatePokemonForDate(tomorrowStr);
+    }
+    
+    // Return today's Pokémon
+    if (todayPokemon) {
+      return getPokemonById(todayPokemon.pokemon_id);
     } else {
-      // No daily Pokémon yet, create a random one for today
-      // Use all generations for global daily
-      const allGenerations = Array.from({ length: 9 }, (_, i) => i + 1);
-      const genRanges = getIdRangesForGenerations(allGenerations);
+      // This should rarely happen as we just tried to create it
+      const [newTodayPokemon] = await dbConnectionManager.query(
+        'SELECT pokemon_id FROM daily_pokemon WHERE date = $1',
+        [todayStr]
+      );
       
-      // Build ID range condition
-      const idRangeCondition = genRanges
-        .map(range => `(id BETWEEN ${range.start} AND ${range.end})`)
-        .join(' OR ');
-        
-      // Insert a random Pokémon for today
-      const insertQuery = `
-        INSERT INTO daily_pokemon (date, pokemon_id)
-        SELECT $1, id 
-        FROM pokemon 
-        WHERE ${idRangeCondition}
-        ORDER BY RANDOM() 
-        LIMIT 1
-        RETURNING pokemon_id
-      `;
-      
-      const [newDaily] = await dbConnectionManager.query(insertQuery, [today]);
-      
-      if (newDaily && newDaily.pokemon_id) {
-        return getPokemonById(newDaily.pokemon_id);
+      if (newTodayPokemon) {
+        return getPokemonById(newTodayPokemon.pokemon_id);
       }
     }
     
     return null;
   } catch (error) {
-    console.error('Error getting global daily Pokémon:', error);
+    console.error('Error getting/generating daily Pokémon:', error);
+    return null;
+  }
+}
+
+// Helper function to generate a Pokémon for a specific date
+async function generatePokemonForDate(dateStr: string): Promise<number | null> {
+  console.log(`Generating Pokémon for date: ${dateStr}`);
+  
+  try {
+    // Use all generations for global daily
+    const allGenerations = Array.from({ length: 9 }, (_, i) => i + 1);
+    const genRanges = getIdRangesForGenerations(allGenerations);
+    
+    // Build ID range condition
+    const idRangeCondition = genRanges
+      .map(range => `(id BETWEEN ${range.start} AND ${range.end})`)
+      .join(' OR ');
+      
+    // Insert a random Pokémon for the specified date
+    const insertQuery = `
+      INSERT INTO daily_pokemon (date, pokemon_id)
+      SELECT $1, id 
+      FROM pokemon 
+      WHERE ${idRangeCondition}
+      ORDER BY RANDOM() 
+      LIMIT 1
+      RETURNING pokemon_id
+    `;
+    
+    const [result] = await dbConnectionManager.query(insertQuery, [dateStr]);
+    
+    if (result && result.pokemon_id) {
+      console.log(`Successfully generated Pokémon for ${dateStr}: ID ${result.pokemon_id}`);
+      return result.pokemon_id;
+    }
+    
+    console.log(`Failed to generate Pokémon for ${dateStr}`);
+    return null;
+  } catch (error) {
+    console.error(`Error generating Pokémon for ${dateStr}:`, error);
     return null;
   }
 }
