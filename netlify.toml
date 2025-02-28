@@ -11,35 +11,12 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Add these plugins to support scheduling
-[[plugins]]
-  package = "@netlify/plugin-functions-schedule"
-
-# Set up a scheduled function to keep your app warm
-[[scheduled]]
-  handler = "ping"
-  schedule = "*/5 * * * *"  # Run every 5 minutes
-
-# Make sure the ping endpoint is properly routed
-[[redirects]]
-  from = "/api/ping"
-  to = "/.netlify/functions/ping"
-  status = 200
-  force = true
-
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   NEXT_PUBLIC_IS_NETLIFY = "true"
   NODE_OPTIONS = "--max-old-space-size=2048"  # Increase Node memory for builds
 
 # Increase function timeout for database operations
-[functions.ping]
-  included_files = []
-  excluded_files = []
-  node_bundler = "esbuild"
-  timeout = 30
-
-# Set up specific environment for daily functions
 [functions.daily]
   memory = 1024
   timeout = 30
