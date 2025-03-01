@@ -41,7 +41,6 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   const [displayGuesses, setDisplayGuesses] = useState<Pokemon[]>([]);
   const reversedGuesses = [...guesses].reverse();
   const correctSound = useRef<HTMLAudioElement | null>(null);
-  const wrongSound = useRef<HTMLAudioElement | null>(null);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
   const dailyShinyId = useMemo(() => {
@@ -60,40 +59,51 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   }, [target.id]);
 
   useEffect(() => {
-    // Initialize audio elements
+    // Initialize audio element
     correctSound.current = new Audio('/sfx/ding.mp3');
-    wrongSound.current = new Audio('/sfx/ding.mp3');
 
     if (correctSound.current) {
       correctSound.current.volume = 0.3;
       correctSound.current.preload = 'auto';
     }
-    if (wrongSound.current) {
-      wrongSound.current.volume = 0;
-      wrongSound.current.preload = 'auto';
-    }
 
-    // Load sounds
-    const loadSounds = async () => {
-      try {
-        if (correctSound.current) {
-          await correctSound.current.load();
-          console.log('Correct sound loaded');
+    // Preload sound to improve reliability
+    const preloadSound = (audio: HTMLAudioElement | null) => {
+      return new Promise<void>((resolve, reject) => {
+        if (!audio) {
+          resolve();
+          return;
         }
-        if (wrongSound.current) {
-          await wrongSound.current.load();
-          console.log('Wrong sound loaded');
-        }
-      } catch (error) {
-        console.error('Error loading sounds:', error);
-      }
+
+        audio.addEventListener('canplaythrough', () => {
+          console.log('Sound preloaded successfully');
+          resolve();
+        });
+
+        audio.addEventListener('error', (e) => {
+          console.error('Error preloading sound:', e);
+          reject(e);
+        });
+
+        audio.load();
+      });
     };
 
-    loadSounds();
+    // Preload sound
+    preloadSound(correctSound.current)
+      .catch(error => {
+        console.error('Error preloading sound:', error);
+      });
 
     // Cleanup function
     return () => {
       timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      
+      // Pause and reset audio element
+      if (correctSound.current) {
+        correctSound.current.pause();
+        correctSound.current.currentTime = 0;
+      }
     };
   }, []);
 
@@ -108,15 +118,6 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
         if (playPromise !== undefined) {
           playPromise.catch(error => {
             console.log('Error playing correct sound:', error);
-          });
-        }
-      } else if (!isCorrect && wrongSound.current) {
-        console.log('Playing incorrect sound');
-        wrongSound.current.currentTime = 0;
-        const playPromise = wrongSound.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('Error playing incorrect sound:', error);
           });
         }
       }

@@ -9,14 +9,14 @@
 
 .generation-label {
   position: absolute;
-  left: -36px;
-  top: -10px;
+  left: 92px;
+  top: -12px;
   transform-origin: center;
   font-size: 0.8rem;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.10);
   white-space: nowrap;
 }
 

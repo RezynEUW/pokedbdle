@@ -1,0 +1,234 @@
+/* HintComponent.css */
+.hint-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(30, 30, 60, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 0;
+    position: relative;
+    flex-shrink: 0;
+    margin-right: 5px;
+  }
+  
+  .hint-button svg {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease;
+  }
+  
+  .hint-counter {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #f59e0b; /* Amber color makes it stand out as waiting */
+    color: #000;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .hint-button.unlocked {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(30, 30, 60, 0.9);
+    border-color: rgba(255, 255, 255, 0.25);
+    animation: pulse 2s infinite;
+  }
+  
+  .hint-button.active {
+    color: white;
+    background: rgba(99, 102, 241, 0.7);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    transform: scale(1.1);
+    animation: none;
+  }
+  
+  .hint-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: rgba(75, 75, 95, 0.5);
+    animation: none;
+  }
+  
+  .hint-button:hover:not(:disabled) {
+    transform: scale(1.0);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .hint-button.unlocked:hover {
+    background: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), 
+                0 0 0 2px rgba(99, 102, 241, 0.3);
+  }
+  
+  .hint-button:active:not(:disabled) {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Hint Message Row */
+  .hint-row {
+    width: 100%;
+    grid-row: 2;
+    min-height: 16px;
+    position: relative;
+  }
+  
+  .hint-message-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+    position: absolute;
+    top: 100%;
+    left: 0;
+  }
+  
+  .hint-message {
+    background: rgba(30, 30, 50, 0.99);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    width: 90%;
+    max-width: 500px;
+    animation: slideDown 0.2s ease-out;
+  }
+  
+  .hint-message-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .hint-message-close-btn:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .hint-message-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .hint-message-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4ade80;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    text-align: center;
+  }
+  
+  .hint-message-text {
+    font-size: 1.125rem;
+    color: white;
+    line-height: 1.6;
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+  }
+  
+  /* Animations */
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(99, 102, 241, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    }
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Tooltips */
+  .hint-button:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0.9;
+    max-width: 200px;
+    width: max-content;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hint-message {
+      padding: 20px 16px;
+      width: 95%;
+    }
+  
+    .hint-message-title {
+      font-size: 1.25rem;
+    }
+  
+    .hint-message-text {
+      font-size: 1rem;
+      padding: 16px;
+    }
+    
+    .hint-button:hover::after {
+      max-width: 220px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .hint-button:hover::after {
+      width: 220px;
+      white-space: normal;
+      text-align: center;
+    }
+  }
