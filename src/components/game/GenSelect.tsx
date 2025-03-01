@@ -20,6 +20,9 @@ const GenSelect: React.FC<GenSelectProps> = ({
   
   // Track if this is a user-initiated change
   const isUserChange = useRef(false);
+  
+  // Store the last fetched date to detect day changes
+  const lastFetchDateRef = useRef<string>(new Date().toDateString());
 
   const [selectedGens, setSelectedGens] = useState<number[]>(() => {
     // Initialize with provided generations, fallback to saved generations or all
@@ -43,9 +46,25 @@ const GenSelect: React.FC<GenSelectProps> = ({
     }
   });
 
+  // Force parent component to acknowledge the current selections
+  // This ensures the parent is always synced with our current state
+  const forceSyncWithParent = useCallback(() => {
+    onGenerationsChange(selectedGens);
+  }, [selectedGens, onGenerationsChange]);
+
   // Memoize the health check function to prevent recreation on every render
   const healthCheck = useCallback(() => {
     try {
+      const currentDate = new Date().toDateString();
+      
+      // If the date has changed, force a sync with the parent
+      if (currentDate !== lastFetchDateRef.current) {
+        console.log('Date changed, forcing sync with parent');
+        lastFetchDateRef.current = currentDate;
+        forceSyncWithParent();
+        return;
+      }
+      
       // Fetch the current saved generations from localStorage
       const saved = localStorage.getItem('pokedle-generations');
       let storedGens: number[] = [];
@@ -58,8 +77,12 @@ const GenSelect: React.FC<GenSelectProps> = ({
       
       // Compare with current state and force update if different
       if (JSON.stringify(storedGens) !== JSON.stringify(selectedGens)) {
+        console.log('GenSelect: State mismatch detected, refreshing state');
         setSelectedGens(storedGens);
         lastExternalGensRef.current = [...storedGens];
+        
+        // Force parent to update with current selections
+        forceSyncWithParent();
       }
     } catch (error) {
       console.error('GenSelect health check error:', error);
@@ -71,19 +94,31 @@ const GenSelect: React.FC<GenSelectProps> = ({
       // Try to save the default generations
       try {
         saveSelectedGenerations(defaultGens);
+        forceSyncWithParent();
       } catch (e) {
         console.error('Failed to save default generations:', e);
       }
     }
-  }, [selectedGens]);
+  }, [selectedGens, forceSyncWithParent]);
   
   // One-time setup of health check interval
   useEffect(() => {
-    // Less frequent health check (15 minutes instead of 5)
-    const interval = setInterval(healthCheck, 15 * 60 * 1000);
+    // More frequent health check (every 2 minutes)
+    const interval = setInterval(healthCheck, 2 * 60 * 1000);
+    
+    // Also check when the tab becomes visible again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Tab became visible, running health check');
+        healthCheck();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [healthCheck]);
 
@@ -91,9 +126,13 @@ const GenSelect: React.FC<GenSelectProps> = ({
   useEffect(() => {
     if (externalSelectedGens && 
         JSON.stringify(externalSelectedGens) !== JSON.stringify(lastExternalGensRef.current)) {
+      console.log('External generations changed:', externalSelectedGens);
       lastExternalGensRef.current = [...externalSelectedGens];
       setSelectedGens(externalSelectedGens);
       isUserChange.current = false;
+      
+      // Save to localStorage when props change
+      saveSelectedGenerations(externalSelectedGens);
     }
   }, [externalSelectedGens]);
 
@@ -101,6 +140,7 @@ const GenSelect: React.FC<GenSelectProps> = ({
   useEffect(() => {
     if (isUserChange.current && 
         JSON.stringify(selectedGens) !== JSON.stringify(lastExternalGensRef.current)) {
+      console.log('User changed generations, notifying parent:', selectedGens);
       lastExternalGensRef.current = [...selectedGens];
       onGenerationsChange(selectedGens);
       isUserChange.current = false;
@@ -111,6 +151,7 @@ const GenSelect: React.FC<GenSelectProps> = ({
     if (disabled) return;
     
     try {
+      console.log('Toggling generation:', gen);
       isUserChange.current = true;
       setSelectedGens(prev => {
         const newGens = prev.includes(gen)
@@ -122,6 +163,7 @@ const GenSelect: React.FC<GenSelectProps> = ({
           return prev;
         }
         
+        console.log('New generations after toggle:', newGens);
         saveSelectedGenerations(newGens);
         return newGens;
       });
@@ -134,6 +176,7 @@ const GenSelect: React.FC<GenSelectProps> = ({
     if (disabled) return;
     
     try {
+      console.log('Selecting all generations');
       isUserChange.current = true;
       const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
       setSelectedGens(allGens);

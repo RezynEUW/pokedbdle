@@ -2,6 +2,9 @@ import { Pokemon } from '@/types/pokemon';
 import { getIdRangesForGenerations } from '@/lib/utils/generations';
 import { dbConnectionManager } from '@/lib/db/connectionManager';
 
+// Number of days to prevent Pokemon repeats
+const NO_REPEAT_DAYS = 30;
+
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -38,15 +41,50 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
       .map(range => `(id BETWEEN ${range.start} AND ${range.end})`)
       .join(' OR ');
 
-    // Get count of Pokemon in selected generations
+    // Get recently used Pokémon IDs to exclude (last 30 days)
+    const pastDate = new Date(today);
+    pastDate.setDate(pastDate.getDate() - NO_REPEAT_DAYS);
+    const pastDateStr = pastDate.toISOString().split('T')[0];
+    
+    const recentPokemonResult = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date > $1',
+      [pastDateStr]
+    );
+    
+    const recentPokemonIds = recentPokemonResult.map((row: any) => row.pokemon_id);
+    console.log(`Found ${recentPokemonIds.length} recently used Pokémon to exclude`);
+    
+    // Add exclusion condition if needed
+    let exclusionCondition = '';
+    if (recentPokemonIds.length > 0) {
+      exclusionCondition = ` AND id NOT IN (${recentPokemonIds.join(',')})`;
+    }
+
+    // Get count of available Pokemon in selected generations, excluding recent ones
     const countQuery = `
       SELECT COUNT(*) as total_pokemon 
       FROM pokemon 
-      WHERE ${idRangeConditions}
+      WHERE (${idRangeConditions})${exclusionCondition}
     `;
     
     const [countResult] = await dbConnectionManager.query(countQuery);
-    const totalPokemon = parseInt(countResult.total_pokemon);
+    let totalPokemon = parseInt(countResult.total_pokemon);
+    
+    // If no Pokémon available after exclusion, remove the exclusion
+    if (totalPokemon === 0) {
+      console.log('No Pokémon available after exclusion, using all Pokémon in selected generations');
+      exclusionCondition = '';
+      
+      // Get new count without exclusions
+      const fallbackCountQuery = `
+        SELECT COUNT(*) as total_pokemon 
+        FROM pokemon 
+        WHERE (${idRangeConditions})
+      `;
+      
+      const [fallbackCountResult] = await dbConnectionManager.query(fallbackCountQuery);
+      totalPokemon = parseInt(fallbackCountResult.total_pokemon);
+    }
     
     if (totalPokemon === 0) {
       throw new Error('No Pokemon found in the selected generations');
@@ -60,12 +98,12 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
     // Get deterministic random index
     const randomIndex = Math.floor(seededRandom(combinedSeed) * totalPokemon);
 
-    // Query for a Pokemon in the selected generations
+    // Query for a Pokemon in the selected generations, excluding recent ones
     const pokemonQuery = `
       WITH ordered_pokemon AS (
         SELECT id, ROW_NUMBER() OVER (ORDER BY id) as row_num
         FROM pokemon
-        WHERE ${idRangeConditions}
+        WHERE (${idRangeConditions})${exclusionCondition}
       ),
       max_stats AS (
         SELECT pokemon_id, MAX(base_value) as max_value
@@ -138,7 +176,6 @@ export async function getDailyPokemon(options: DailyPokemonOptions = {}): Promis
 }
 
 // In the getGlobalDailyPokemon function:
-
 async function getGlobalDailyPokemon(): Promise<Pokemon | null> {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
@@ -209,13 +246,33 @@ async function generatePokemonForDate(dateStr: string): Promise<number | null> {
     const idRangeCondition = genRanges
       .map(range => `(id BETWEEN ${range.start} AND ${range.end})`)
       .join(' OR ');
-      
-    // Insert a random Pokémon for the specified date
+    
+    // Get list of recently used Pokémon IDs (last 30 days)
+    const dateObj = new Date(dateStr);
+    const pastDate = new Date(dateObj);
+    pastDate.setDate(pastDate.getDate() - NO_REPEAT_DAYS);
+    const pastDateStr = pastDate.toISOString().split('T')[0];
+    
+    const recentPokemonResult = await dbConnectionManager.query(
+      'SELECT pokemon_id FROM daily_pokemon WHERE date > $1 AND date < $2',
+      [pastDateStr, dateStr]
+    );
+    
+    const recentPokemonIds = recentPokemonResult.map((row: any) => row.pokemon_id);
+    console.log(`Found ${recentPokemonIds.length} recently used Pokémon to exclude`);
+    
+    // Add exclusion condition if needed
+    let exclusionCondition = '';
+    if (recentPokemonIds.length > 0) {
+      exclusionCondition = ` AND id NOT IN (${recentPokemonIds.join(',')})`;
+    }
+    
+    // Insert a random Pokémon for the specified date that hasn't been used recently
     const insertQuery = `
       INSERT INTO daily_pokemon (date, pokemon_id)
       SELECT $1, id 
       FROM pokemon 
-      WHERE ${idRangeCondition}
+      WHERE ${idRangeCondition}${exclusionCondition}
       ORDER BY RANDOM() 
       LIMIT 1
       RETURNING pokemon_id
@@ -226,6 +283,25 @@ async function generatePokemonForDate(dateStr: string): Promise<number | null> {
     if (result && result.pokemon_id) {
       console.log(`Successfully generated Pokémon for ${dateStr}: ID ${result.pokemon_id}`);
       return result.pokemon_id;
+    }
+    
+    // If no result (possibly because all Pokémon were excluded), try again without exclusion
+    console.log(`No Pokémon available with exclusions, trying without exclusion`);
+    const fallbackQuery = `
+      INSERT INTO daily_pokemon (date, pokemon_id)
+      SELECT $1, id 
+      FROM pokemon 
+      WHERE ${idRangeCondition}
+      ORDER BY RANDOM() 
+      LIMIT 1
+      RETURNING pokemon_id
+    `;
+    
+    const [fallbackResult] = await dbConnectionManager.query(fallbackQuery, [dateStr]);
+    
+    if (fallbackResult && fallbackResult.pokemon_id) {
+      console.log(`Successfully generated fallback Pokémon for ${dateStr}: ID ${fallbackResult.pokemon_id}`);
+      return fallbackResult.pokemon_id;
     }
     
     console.log(`Failed to generate Pokémon for ${dateStr}`);

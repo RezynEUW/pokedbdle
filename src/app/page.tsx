@@ -36,6 +36,12 @@ function HomePage() {
   
   // Ref to track date check interval
   const dateCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Ref to track last fetch time to prevent too frequent fetches
+  const lastFetchTimeRef = useRef<number>(0);
+  
+  // Ref to track current active generations used for fetching
+  const activeGenerationsRef = useRef<number[]>([]);
 
   // Memoize safeLocalStorage to maintain referential stability
   const safeLocalStorage = useMemo(() => ({
@@ -63,6 +69,7 @@ function HomePage() {
     if (typeof window !== 'undefined') {
       const generations = getSelectedGenerations();
       setSelectedGenerations(generations);
+      activeGenerationsRef.current = generations;
     }
   }, []);
   
@@ -104,29 +111,47 @@ function HomePage() {
   // Load the daily Pokémon and game state from localStorage
   const fetchDailyPokemon = useCallback(async (generations?: number[], forceRefresh = false) => {
     try {
+      // Prevent rapid re-fetches (e.g., due to multiple state updates)
+      const now = Date.now();
+      if (!forceRefresh && now - lastFetchTimeRef.current < 2000) {
+        console.log('Skipping fetch - too soon since last fetch');
+        return;
+      }
+      lastFetchTimeRef.current = now;
+      
       setIsLoading(true);
+      
       // Get the current date in local timezone YYYY-MM-DD format (not UTC)
-      const now = new Date();
-      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const gens = generations || selectedGenerations;
+      const currentDate = new Date();
+      const localDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+      
+      // Use provided generations, current selected generations, or active generations ref
+      const gensToUse = generations || selectedGenerations || activeGenerationsRef.current;
+      console.log('Fetching with generations:', gensToUse);
+      
+      // Update our active generations reference
+      activeGenerationsRef.current = gensToUse;
   
       // Only check localStorage if not forcing a refresh
       if (!forceRefresh) {
         // Retrieve saved game state (safely)
         const savedGameState = safeLocalStorage.getItem('pokedle-game-state');
-        const today = now.toDateString();
+        const today = currentDate.toDateString();
   
         // Only use saved state if not changing generations or forcing refresh
         if (savedGameState && !generations && !forceRefresh) {
           try {
             const parsedState = JSON.parse(savedGameState);
   
-            // Check if saved state is from today
-            if (parsedState.date === today) {
+            // Check if saved state is from today AND using same generations
+            const savedGens = parsedState.generations || [];
+            const gensMatch = JSON.stringify(savedGens.sort()) === JSON.stringify(gensToUse.sort());
+            
+            if (parsedState.date === today && gensMatch) {
               // We still need to fetch the target Pokémon for this day
               const params = new URLSearchParams({
                 date: localDate,
-                generations: gens.join(','),
+                generations: gensToUse.join(','),
                 t: Date.now().toString() // Cache busting
               });
               
@@ -162,7 +187,7 @@ function HomePage() {
               setIsLoading(false);
               return;
             } else {
-              console.log('Saved state date different from today, fetching new Pokémon');
+              console.log('Saved state date different or generations changed, fetching new Pokémon');
             }
           } catch (parseError) {
             console.error('Failed to parse saved game state:', parseError);
@@ -173,7 +198,7 @@ function HomePage() {
       // Fetch daily Pokemon with selected generations, local date, and cache busting
       const params = new URLSearchParams({
         date: localDate,
-        generations: gens.join(','),
+        generations: gensToUse.join(','),
         t: Date.now().toString() // Add timestamp to prevent caching
       });
       
@@ -198,7 +223,7 @@ function HomePage() {
       setIsGlobalDaily(data.isGlobalDaily || false);
   
       // Save the generations used for this game
-      saveGameGenerations(gens);
+      saveGameGenerations(gensToUse);
   
       // Reset the game state completely
       setTargetPokemon(data.pokemon);
@@ -229,7 +254,7 @@ function HomePage() {
     if (selectedGenerations.length > 0) {
       fetchDailyPokemon();
     }
-  }, [fetchDailyPokemon, selectedGenerations]);
+  }, [fetchDailyPokemon]);
 
   // Save game state to localStorage
   useEffect(() => {
@@ -337,7 +362,7 @@ function HomePage() {
       if (guessedIds.length > 0) {
         params.set('exclude', guessedIds.join(','));
       }
-      params.set('generations', selectedGenerations.join(','));
+      params.set('generations', activeGenerationsRef.current.join(','));
       params.set('t', Date.now().toString()); // Cache busting
       
       const response = await fetch(`/api/random?${params}`);
@@ -352,7 +377,7 @@ function HomePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [targetPokemon, guesses, gameState, handleGuess, isLoading, selectedGenerations]);
+  }, [targetPokemon, guesses, gameState, handleGuess, isLoading]);
 
   // Reset game function for when game is completed
   const handleResetGame = useCallback(() => {
@@ -389,12 +414,23 @@ function HomePage() {
     // Only allow generation changes if the game is not complete
     if (gameState !== 'playing') return;
     
+    console.log('Generation change requested to:', generations);
+    
+    // Skip if generations haven't actually changed
+    if (JSON.stringify(generations.sort()) === JSON.stringify(activeGenerationsRef.current.sort())) {
+      console.log('Generations unchanged, skipping update');
+      return;
+    }
+    
     // Mark reset as in progress
     resetInProgressRef.current = true;
     
     // Save the selected generations immediately
     saveSelectedGenerations(generations);
     setSelectedGenerations(generations);
+    
+    // Update our active generations reference immediately
+    activeGenerationsRef.current = [...generations];
     
     // Clear any previous timer
     if (generationsChangeTimerRef.current) {
@@ -415,9 +451,13 @@ function HomePage() {
     streakUpdatedRef.current = false;
     gameCompletedRef.current = false;
     
-    // Step 4: Fetch a new Pokémon with the new generations
-    // Pass forceRefresh=true to ensure we get a fresh pokemon
-    fetchDailyPokemon(generations, true);
+    // Add a short delay to ensure state updates have processed
+    generationsChangeTimerRef.current = setTimeout(() => {
+      // Step 4: Fetch a new Pokémon with the new generations
+      // Pass forceRefresh=true to ensure we get a fresh pokemon
+      fetchDailyPokemon(generations, true);
+      generationsChangeTimerRef.current = null;
+    }, 100);
     
   }, [fetchDailyPokemon, gameState, safeLocalStorage]);
   
