@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Pokemon } from '@/types/pokemon';
 import { compareGuess } from '@/lib/game/compareGuess';
@@ -39,9 +39,9 @@ interface GuessGridProps {
 
 const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
   const [displayGuesses, setDisplayGuesses] = useState<Pokemon[]>([]);
-  const reversedGuesses = [...guesses].reverse();
-  const correctSound = useRef<HTMLAudioElement | null>(null);
-  const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  
+  // Move the reversal into useMemo to prevent it from recalculating on every render
+  const reversedGuesses = useMemo(() => [...guesses].reverse(), [guesses]);
 
   const dailyShinyId = useMemo(() => {
     const date = new Date();
@@ -58,118 +58,10 @@ const GuessGrid: React.FC<GuessGridProps> = ({ guesses, target }) => {
     return baseNumber;
   }, [target.id]);
 
-  useEffect(() => {
-    // Initialize audio element
-    correctSound.current = new Audio('/sfx/ding.mp3');
-
-    if (correctSound.current) {
-      correctSound.current.volume = 0.3;
-      correctSound.current.preload = 'auto';
-    }
-
-    // Preload sound to improve reliability
-    const preloadSound = (audio: HTMLAudioElement | null) => {
-      return new Promise<void>((resolve, reject) => {
-        if (!audio) {
-          resolve();
-          return;
-        }
-
-        audio.addEventListener('canplaythrough', () => {
-          console.log('Sound preloaded successfully');
-          resolve();
-        });
-
-        audio.addEventListener('error', (e) => {
-          console.error('Error preloading sound:', e);
-          reject(e);
-        });
-
-        audio.load();
-      });
-    };
-
-    // Preload sound
-    preloadSound(correctSound.current)
-      .catch(error => {
-        console.error('Error preloading sound:', error);
-      });
-
-    // Cleanup function
-    return () => {
-      timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
-      
-      // Pause and reset audio element
-      if (correctSound.current) {
-        correctSound.current.pause();
-        correctSound.current.currentTime = 0;
-      }
-    };
-  }, []);
-
-  // Function to play sound based on card state
-  const playSound = (isCorrect: boolean) => {
-    console.log('Attempting to play sound:', isCorrect ? 'correct' : 'incorrect');
-    try {
-      if (isCorrect && correctSound.current) {
-        console.log('Playing correct sound');
-        correctSound.current.currentTime = 0;
-        const playPromise = correctSound.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.log('Error playing correct sound:', error);
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error in playSound:', error);
-    }
-  };
-
-  useEffect(() => {
-    // Clear any existing timeouts
-    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
-    timeoutsRef.current = [];
-
-    // If this is the first load
-    if (displayGuesses.length === 0 && guesses.length > 0) {
-      setDisplayGuesses(reversedGuesses);
-      return;
-    }
-
-    // If a new guess was added
-    if (guesses.length > displayGuesses.length) {
-      console.log('New guess detected');
-      setDisplayGuesses(reversedGuesses);
-
-      // Get the latest guess and its comparison results
-      const latestGuess = reversedGuesses[0];
-      const results = compareGuess(latestGuess, target);
-
-      // Schedule sounds for each card reveal
-      const resultArray = [
-        { isCorrect: Boolean(results.types.isCorrect || results.types.isPartiallyCorrect) },
-        { isCorrect: Boolean(results.generation.isCorrect) },
-        { isCorrect: Boolean(results.color.isCorrect) },
-        { isCorrect: Boolean(results.evolution.isCorrect) },
-        { isCorrect: Boolean(results.height.isCorrect) },
-        { isCorrect: Boolean(results.weight.isCorrect) },
-        { isCorrect: Boolean(results.bst.isCorrect) },
-        { isCorrect: Boolean(results.eggGroups?.isCorrect || results.eggGroups?.isPartiallyCorrect) },
-        { isCorrect: Boolean(results.abilities?.isCorrect || results.abilities?.isPartiallyCorrect) }
-      ];
-
-      console.log('Scheduling sounds for results:', resultArray);
-
-      resultArray.forEach((result, index) => {
-        const timeout = setTimeout(() => {
-          console.log(`Playing sound for card ${index + 1}:`, result.isCorrect ? 'correct' : 'incorrect');
-          playSound(result.isCorrect);
-        }, 200 * (index + 1));
-        timeoutsRef.current.push(timeout);
-      });
-    }
-  }, [guesses.length, displayGuesses.length, reversedGuesses, target]);
+  // Update displayGuesses when guesses change
+  React.useEffect(() => {
+    setDisplayGuesses(reversedGuesses);
+  }, [reversedGuesses]);
 
   return (
     <div className="guesses-container">

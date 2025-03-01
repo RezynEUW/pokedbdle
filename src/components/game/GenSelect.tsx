@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { saveSelectedGenerations } from '@/lib/game/storage';
 import './GenSelect.css';
 
@@ -18,11 +18,8 @@ const GenSelect: React.FC<GenSelectProps> = ({
   // Keep track of the last value we received from props to avoid infinite loops
   const lastExternalGensRef = useRef<number[]>([]);
   
-  // Track the last time the component state changed
-  const lastChangeTimeRef = useRef<number>(Date.now());
-  
-  // Track if there was an error in state synchronization
-  const errorCountRef = useRef<number>(0);
+  // Track if this is a user-initiated change
+  const isUserChange = useRef(false);
 
   const [selectedGens, setSelectedGens] = useState<number[]>(() => {
     // Initialize with provided generations, fallback to saved generations or all
@@ -46,65 +43,49 @@ const GenSelect: React.FC<GenSelectProps> = ({
     }
   });
 
-  // Track if this is a user-initiated change
-  const isUserChange = useRef(false);
-
-  // Periodic health check for component state
-  useEffect(() => {
-    const healthCheck = () => {
-      const now = Date.now();
+  // Memoize the health check function to prevent recreation on every render
+  const healthCheck = useCallback(() => {
+    try {
+      // Fetch the current saved generations from localStorage
+      const saved = localStorage.getItem('pokedle-generations');
+      let storedGens: number[] = [];
       
-      // If it's been more than 15 minutes since the last change
-      if (now - lastChangeTimeRef.current > 15 * 60 * 1000) {
-        console.log('GenSelect: Running health check');
-        
-        try {
-          // Fetch the current saved generations from localStorage
-          const saved = localStorage.getItem('pokedle-generations');
-          let storedGens: number[] = [];
-          
-          if (saved) {
-            storedGens = JSON.parse(saved);
-          } else {
-            storedGens = Array.from({ length: 9 }, (_, i) => i + 1);
-          }
-          
-          // Compare with current state and force update if different
-          if (JSON.stringify(storedGens) !== JSON.stringify(selectedGens)) {
-            console.log('GenSelect: State mismatch detected, refreshing state');
-            setSelectedGens(storedGens);
-            lastExternalGensRef.current = [...storedGens];
-            lastChangeTimeRef.current = now;
-          }
-        } catch (error) {
-          console.error('GenSelect health check error:', error);
-          errorCountRef.current += 1;
-          
-          // If we've had multiple errors, try to recover by resetting to default state
-          if (errorCountRef.current > 3) {
-            console.log('GenSelect: Multiple errors detected, attempting recovery');
-            const defaultGens = Array.from({ length: 9 }, (_, i) => i + 1);
-            setSelectedGens(defaultGens);
-            lastExternalGensRef.current = [...defaultGens];
-            lastChangeTimeRef.current = now;
-            errorCountRef.current = 0;
-            
-            // Try to save the default generations
-            try {
-              saveSelectedGenerations(defaultGens);
-            } catch (e) {
-              console.error('Failed to save default generations:', e);
-            }
-          }
-        }
+      if (saved) {
+        storedGens = JSON.parse(saved);
+      } else {
+        storedGens = Array.from({ length: 9 }, (_, i) => i + 1);
       }
-    };
-    
-    // Check every 5 minutes
-    const interval = setInterval(healthCheck, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
+      
+      // Compare with current state and force update if different
+      if (JSON.stringify(storedGens) !== JSON.stringify(selectedGens)) {
+        setSelectedGens(storedGens);
+        lastExternalGensRef.current = [...storedGens];
+      }
+    } catch (error) {
+      console.error('GenSelect health check error:', error);
+      // Simplified error handling
+      const defaultGens = Array.from({ length: 9 }, (_, i) => i + 1);
+      setSelectedGens(defaultGens);
+      lastExternalGensRef.current = [...defaultGens];
+      
+      // Try to save the default generations
+      try {
+        saveSelectedGenerations(defaultGens);
+      } catch (e) {
+        console.error('Failed to save default generations:', e);
+      }
+    }
   }, [selectedGens]);
+  
+  // One-time setup of health check interval
+  useEffect(() => {
+    // Less frequent health check (15 minutes instead of 5)
+    const interval = setInterval(healthCheck, 15 * 60 * 1000);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, [healthCheck]);
 
   // Update internal state when external props change, but only if they're different
   useEffect(() => {
@@ -113,7 +94,6 @@ const GenSelect: React.FC<GenSelectProps> = ({
       lastExternalGensRef.current = [...externalSelectedGens];
       setSelectedGens(externalSelectedGens);
       isUserChange.current = false;
-      lastChangeTimeRef.current = Date.now();
     }
   }, [externalSelectedGens]);
 
@@ -124,7 +104,6 @@ const GenSelect: React.FC<GenSelectProps> = ({
       lastExternalGensRef.current = [...selectedGens];
       onGenerationsChange(selectedGens);
       isUserChange.current = false;
-      lastChangeTimeRef.current = Date.now();
     }
   }, [selectedGens, onGenerationsChange]);
 
@@ -144,13 +123,10 @@ const GenSelect: React.FC<GenSelectProps> = ({
         }
         
         saveSelectedGenerations(newGens);
-        lastChangeTimeRef.current = Date.now();
         return newGens;
       });
     } catch (error) {
       console.error('Error toggling generation:', error);
-      // Recovery attempt
-      errorCountRef.current += 1;
     }
   };
 
@@ -162,11 +138,8 @@ const GenSelect: React.FC<GenSelectProps> = ({
       const allGens = Array.from({ length: 9 }, (_, i) => i + 1);
       setSelectedGens(allGens);
       saveSelectedGenerations(allGens);
-      lastChangeTimeRef.current = Date.now();
     } catch (error) {
       console.error('Error selecting all generations:', error);
-      // Recovery attempt
-      errorCountRef.current += 1;
     }
   };
 
