@@ -14,7 +14,7 @@
   background: var(--card-bg, rgba(20, 20, 35, 0.8));
   color: var(--text, #fff);
   font-size: 1rem;
-  margin-left: 14;
+  margin-left: 18;
   outline: none;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -36,7 +36,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  margin-left: 14;
+  margin-left: 18;
   margin-top: 8px;
   background: var(--card-bg, rgba(20, 20, 35, 0.9));
   border: 2px solid var(--card-border, rgba(255, 255, 255, 0.15));
@@ -52,12 +52,13 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   z-index: 9999; /* Very high z-index to ensure it's above everything */
+  opacity: 0.99;
 }
 
 .suggestion-item {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: 4px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -79,12 +80,15 @@
 }
 
 .pokemon-suggestion-sprite {
+  transform: scale(1.1);
   width: 60px;
   height: 60px;
   margin-right: 16px;
   background: rgba(255, 255, 255, 0.0);
   border-radius: 8px;
-  padding: 4px;
+  padding: 8;
+  padding-left: 10;
+  padding-right: 10;
   transition: transform 0.2s ease;
 }
 
@@ -99,7 +103,7 @@
   font-size: 1rem;
   text-transform: capitalize;
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 
 /* Fixed loading spinner positioning */
