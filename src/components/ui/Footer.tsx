@@ -1,8 +1,22 @@
-// src/components/ui/Footer.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './Footer.css';
 
 const Footer: React.FC = () => {
+  const [colorMode, setColorMode] = useState('default');
+
+  useEffect(() => {
+    // Load saved preference on mount
+    const savedMode = localStorage.getItem('pokedle-color-mode') || 'default';
+    setColorMode(savedMode);
+    document.documentElement.setAttribute('data-color-mode', savedMode);
+  }, []);
+
+  const handleColorModeChange = (mode: string) => {
+    setColorMode(mode);
+    localStorage.setItem('pokedle-color-mode', mode);
+    document.documentElement.setAttribute('data-color-mode', mode);
+  };
+
   return (
     <footer className="site-footer">
       <div className="footer-content">
@@ -48,6 +62,66 @@ const Footer: React.FC = () => {
               <li>Neon.tech PostgreSQL</li>
               <li>React</li>
             </ul>
+          </div>
+        </div>
+
+        <div className="footer-section accessibility-section">
+          <h3>Accessibility</h3>
+          <p>
+            Choose a color mode for improved accessibility:
+          </p>
+          <div className="color-mode-options">
+            <button 
+              className={`color-mode-btn ${colorMode === 'default' ? 'active' : ''}`}
+              onClick={() => handleColorModeChange('default')}
+              aria-label="Standard color mode"
+            >
+              <span className="mode-swatch default-swatch">
+                <span className="swatch-correct"></span>
+                <span className="swatch-partial"></span>
+                <span className="swatch-incorrect"></span>
+              </span>
+              <span className="mode-name">Standard</span>
+            </button>
+            
+            <button 
+              className={`color-mode-btn ${colorMode === 'dyschromatopsia' ? 'active' : ''}`}
+              onClick={() => handleColorModeChange('dyschromatopsia')}
+              aria-label="Dyschromatopsia (Red-Green blindness) friendly mode"
+            >
+              <span className="mode-swatch dyschromatopsia-swatch">
+                <span className="swatch-correct"></span>
+                <span className="swatch-partial"></span>
+                <span className="swatch-incorrect"></span>
+              </span>
+              <span className="mode-name">Dyschroma</span>
+            </button>
+            
+            <button 
+              className={`color-mode-btn ${colorMode === 'alternate' ? 'active' : ''}`}
+              onClick={() => handleColorModeChange('alternate')}
+              aria-label="Alternate color scheme"
+            >
+              <span className="mode-swatch alternate-swatch">
+                <span className="swatch-correct"></span>
+                <span className="swatch-partial"></span>
+                <span className="swatch-incorrect"></span>
+              </span>
+              <span className="mode-name">Alternate</span>
+            </button>
+            
+            <button 
+              className={`color-mode-btn ${colorMode === 'monochrome' ? 'active' : ''}`}
+              onClick={() => handleColorModeChange('monochrome')}
+              aria-label="Monochrome (grayscale) mode"
+            >
+              <span className="mode-swatch monochrome-swatch">
+                <span className="swatch-correct"></span>
+                <span className="swatch-partial"></span>
+                <span className="swatch-incorrect"></span>
+              </span>
+              <span className="mode-name">Monochrome</span>
+            </button>
           </div>
         </div>
       </div>

@@ -519,3 +519,192 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Add this to the end of your GuessGrid.css file */
+
+/* Colorblind Mode Styles - Final Version */
+
+/* Base styles for different color modes */
+:root {
+  /* Default color scheme */
+  --correct-bg: radial-gradient(circle, rgba(43, 187, 85, 0.2) 0%, rgba(43, 187, 85, 0.95) 100%);
+  --correct-border: 2px solid rgba(255, 255, 255, 0.8);
+  
+  --partial-bg: radial-gradient(circle, rgba(230, 184, 0, 0.2) 0%, rgba(230, 184, 0, 0.95) 100%);
+  --partial-border: 2px dashed rgba(255, 255, 255, 0.6);
+  
+  --incorrect-bg: radial-gradient(circle, rgba(224, 81, 81, 0.3) 0%, rgba(224, 81, 81, 0.95) 100%);
+  --incorrect-border: 2px none rgba(255, 255, 255, 0.4);
+}
+
+/* Dyschromatopsia Mode - Blue/Yellow/Gray scheme */
+[data-color-mode="dyschromatopsia"] {
+  --correct-bg: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, rgba(59, 93, 246, 0.95) 100%);
+  --correct-border: 2px solid rgba(255, 255, 255, 0.8);
+  
+  --partial-bg: radial-gradient(circle, rgba(250, 204, 21, 0.2) 0%, rgba(250, 204, 21, 0.95) 100%);
+  --partial-border: 2px dashed rgba(255, 255, 255, 0.6);
+  
+  --incorrect-bg: radial-gradient(circle, rgba(100, 116, 139, 0.3) 0%, rgba(100, 116, 139, 0.55) 100%);
+  --incorrect-border: 2px none rgba(255, 255, 255, 0.4);
+}
+
+/* Alternate Mode - Purple/Lavender/Burgundy */
+[data-color-mode="alternate"] {
+  --correct-bg: radial-gradient(circle, rgba(76, 29, 149, 0.3) 0%, rgba(76, 29, 149, 0.95) 100%);
+  --correct-border: 2px solid rgba(255, 255, 255, 0.8);
+  
+  --partial-bg: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(167, 139, 250, 0.75) 100%);
+  --partial-border: 2px dashed rgba(255, 255, 255, 0.6);
+  
+  --incorrect-bg: radial-gradient(circle, rgba(153, 27, 27, 0.3) 0%, rgba(153, 27, 27, 0.95) 100%);
+  --incorrect-border: 2px none rgba(255, 255, 255, 0.4);
+}
+
+/* Monochrome Mode - Toned down grays */
+[data-color-mode="monochrome"] {
+  --correct-bg: radial-gradient(circle, rgba(229, 231, 235, 0.9) 0%, rgba(229, 231, 235, 0.95) 100%);
+  --correct-border: 2px solid rgba(0, 0, 0, 0.4);
+  
+  --partial-bg: radial-gradient(circle, rgba(148, 163, 184, 0.6) 0%, rgba(148, 163, 184, 0.95) 100%);
+  --partial-border: 2px solid rgba(255, 255, 255, 0.2);
+  
+  --incorrect-bg: radial-gradient(circle, rgba(51, 65, 85, 0.3) 0%, rgba(51, 65, 85, 0.95) 100%);
+  --incorrect-border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Apply CSS Variables to the stat cards */
+.stat-card.correct {
+  background: var(--correct-bg);
+  border: var(--correct-border);
+}
+
+.stat-card.partial {
+  background: var(--partial-bg);
+  border: var(--partial-border);
+}
+
+.stat-card.incorrect {
+  background: var(--incorrect-bg);
+  border: var(--incorrect-border);
+}
+
+/* Override type cards to match styles */
+.type-card.correct {
+  background: var(--correct-bg);
+  border: var(--correct-border);
+}
+
+.type-card.partial {
+  background: var(--partial-bg);
+  border: var(--partial-border);
+}
+
+.type-card.incorrect {
+  background: var(--incorrect-bg);
+  border: var(--incorrect-border);
+}
+
+/* Text color adjustments for monochrome mode */
+[data-color-mode="monochrome"] .stat-card.correct {
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+[data-color-mode="monochrome"] .stat-card.incorrect {
+  color: #fff !important;
+}
+
+/* Help modal indicator styling for different modes */
+[data-color-mode="dyschromatopsia"] .indicator.correct,
+[data-color-mode="alternate"] .indicator.correct,
+[data-color-mode="monochrome"] .indicator.correct {
+  background: var(--correct-bg);
+  border: var(--correct-border);
+}
+
+[data-color-mode="dyschromatopsia"] .indicator.partial,
+[data-color-mode="alternate"] .indicator.partial,
+[data-color-mode="monochrome"] .indicator.partial {
+  background: var(--partial-bg);
+  border: var(--partial-border);
+}
+
+[data-color-mode="dyschromatopsia"] .indicator.incorrect,
+[data-color-mode="alternate"] .indicator.incorrect,
+[data-color-mode="monochrome"] .indicator.incorrect {
+  background: var(--incorrect-bg);
+  border: var(--incorrect-border);
+}
+
+/* Ensure accessibility mode settings are saved between sessions */
+/* This sets a transition for smoother color changes */
+.stat-card, .indicator {
+  transition: background 0.3s ease, border 0.3s ease, color 0.3s ease;
+}
+
+/* Fix text color for hints */
+[data-color-mode="monochrome"] .hint {
+  color: inherit !important;
+}
+
+/* Keep consistent symbols across all modes */
+.correct::before,
+.partial::before,
+.incorrect::before {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.correct::before {
+  content: "✓";
+  color: white;
+}
+
+.partial::before {
+  content: "≈";
+  color: white;
+}
+
+.incorrect::before {
+  content: "✗";
+  color: white;
+}
+
+/* Fix symbol colors in monochrome mode */
+[data-color-mode="monochrome"] .correct::before {
+  color: #000;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Add simple patterns to monochrome mode without being too distracting */
+[data-color-mode="monochrome"] .stat-card.correct::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(45deg, rgba(0, 0, 0, 0.05) 25%, transparent 25%, transparent 50%, rgba(0, 0, 0, 0.05) 50%, rgba(0, 0, 0, 0.05) 75%, transparent 75%, transparent);
+  background-size: 10px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+[data-color-mode="monochrome"] .stat-card.partial::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.1) 75%, transparent 75%, transparent);
+  background-size: 10px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+}
