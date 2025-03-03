@@ -34,14 +34,14 @@ function HomePage() {
   // Ref to track if a reset is in progress
   const resetInProgressRef = useRef(false);
   
-  // Ref to track date check interval
-  const dateCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Ref to track the active generations
+  const activeGenerationsRef = useRef<number[]>([]);
   
-  // Ref to track last fetch time to prevent too frequent fetches
+  // Ref to track the last fetch time to prevent too frequent fetches
   const lastFetchTimeRef = useRef<number>(0);
   
-  // Ref to track current active generations used for fetching
-  const activeGenerationsRef = useRef<number[]>([]);
+  // Ref to track date check interval
+  const dateCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Memoize safeLocalStorage to maintain referential stability
   const safeLocalStorage = useMemo(() => ({
@@ -69,7 +69,9 @@ function HomePage() {
     if (typeof window !== 'undefined') {
       const generations = getSelectedGenerations();
       setSelectedGenerations(generations);
+      // Also store in ref for consistent access
       activeGenerationsRef.current = generations;
+      console.log('Initialized with generations:', generations);
     }
   }, []);
   
@@ -120,42 +122,50 @@ function HomePage() {
       lastFetchTimeRef.current = now;
       
       setIsLoading(true);
-      
-      // Get the current date in local timezone YYYY-MM-DD format (not UTC)
+      // Get the current date in YYYY-MM-DD format
       const currentDate = new Date();
-      const localDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+      const localDate = currentDate.toISOString().split('T')[0];
       
-      // Use provided generations, current selected generations, or active generations ref
-      const gensToUse = generations || selectedGenerations || activeGenerationsRef.current;
-      console.log('Fetching with generations:', gensToUse);
+      // Use provided generations, selected generations state, or active generations ref (in that order)
+      const gens = generations || selectedGenerations || activeGenerationsRef.current;
+      console.log('Fetching daily Pokémon with generations:', gens);
       
-      // Update our active generations reference
-      activeGenerationsRef.current = gensToUse;
-  
+      // Update active generations ref for consistency
+      activeGenerationsRef.current = gens;
+
       // Only check localStorage if not forcing a refresh
       if (!forceRefresh) {
         // Retrieve saved game state (safely)
         const savedGameState = safeLocalStorage.getItem('pokedle-game-state');
         const today = currentDate.toDateString();
-  
+
         // Only use saved state if not changing generations or forcing refresh
         if (savedGameState && !generations && !forceRefresh) {
           try {
             const parsedState = JSON.parse(savedGameState);
-  
+
             // Check if saved state is from today AND using same generations
             const savedGens = parsedState.generations || [];
-            const gensMatch = JSON.stringify(savedGens.sort()) === JSON.stringify(gensToUse.sort());
+            const gensMatch = JSON.stringify(savedGens.sort()) === JSON.stringify(gens.sort());
             
             if (parsedState.date === today && gensMatch) {
+              console.log('Using saved game state with matching generations');
+              
               // We still need to fetch the target Pokémon for this day
               const params = new URLSearchParams({
                 date: localDate,
-                generations: gensToUse.join(','),
+                generations: gens.join(','),
                 t: Date.now().toString() // Cache busting
               });
               
-              const response = await fetch(`/api/daily?${params}`);
+              const response = await fetch(`/api/daily?${params}`, {
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0'
+                }
+              });
+              
               if (!response.ok) {
                 throw new Error('Failed to fetch daily pokemon');
               }
@@ -164,20 +174,20 @@ function HomePage() {
               if (!data.pokemon) {
                 throw new Error('No pokemon data received');
               }
-  
+
               // Set yesterday's Pokemon
               if (data.yesterdayPokemon) {
                 setYesterdaysPokemon(data.yesterdayPokemon);
               }
-  
+
               // Store whether this is the global daily or a generation-specific one
               setIsGlobalDaily(data.isGlobalDaily || false);
-  
+
               // Restore game state
               setTargetPokemon(data.pokemon);
               setGuesses(parsedState.guesses || []);
               setStreak(parsedState.streak);
-  
+
               // Restore game completion status
               if (parsedState.gameState !== 'playing') {
                 setGameState(parsedState.gameState);
@@ -194,17 +204,24 @@ function HomePage() {
           }
         }
       }
-  
+
       // Fetch daily Pokemon with selected generations, local date, and cache busting
       const params = new URLSearchParams({
         date: localDate,
-        generations: gensToUse.join(','),
+        generations: gens.join(','),
         t: Date.now().toString() // Add timestamp to prevent caching
       });
       
-      console.log('Requesting Pokémon for client date:', localDate);
+      console.log('Requesting Pokémon with params:', params.toString());
       
-      const response = await fetch(`/api/daily?${params}`);
+      const response = await fetch(`/api/daily?${params}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch daily pokemon');
       }
@@ -213,18 +230,20 @@ function HomePage() {
       if (!data.pokemon) {
         throw new Error('No pokemon data received');
       }
-  
+      
+      console.log('Received Pokémon:', data.pokemon.name, 'ID:', data.pokemon.id);
+
       // Set yesterday's Pokemon
       if (data.yesterdayPokemon) {
         setYesterdaysPokemon(data.yesterdayPokemon);
       }
-  
+
       // Store whether this is the global daily or a generation-specific one
       setIsGlobalDaily(data.isGlobalDaily || false);
-  
+
       // Save the generations used for this game
-      saveGameGenerations(gensToUse);
-  
+      saveGameGenerations(gens);
+
       // Reset the game state completely
       setTargetPokemon(data.pokemon);
       setGuesses([]);
@@ -233,13 +252,13 @@ function HomePage() {
       // Reset the streak updated ref for the new game
       streakUpdatedRef.current = false;
       gameCompletedRef.current = false;
-  
+
       // Load streak from localStorage (only if this is a new session)
       if (!forceRefresh) {
         const savedStreak = safeLocalStorage.getItem('pokedle-streak') || '0';
         setStreak(parseInt(savedStreak));
       }
-  
+
     } catch (error) {
       console.error('Error fetching target pokemon:', error);
       setErrorMessage('Failed to load the daily Pokemon. Please try refreshing.');
@@ -249,12 +268,13 @@ function HomePage() {
     }
   }, [selectedGenerations, safeLocalStorage]);
 
-  // Initial fetch
+  // Initial fetch - fixed to avoid ESLint warning
+  const hasSelectedGenerations = selectedGenerations.length > 0;
   useEffect(() => {
-    if (selectedGenerations.length > 0) {
+    if (hasSelectedGenerations) {
       fetchDailyPokemon();
     }
-  }, [fetchDailyPokemon]);
+  }, [fetchDailyPokemon, hasSelectedGenerations]);
 
   // Save game state to localStorage
   useEffect(() => {
@@ -284,9 +304,8 @@ function HomePage() {
       // Store the game completion status
       gameCompletedRef.current = true;
 
-      // Get local date for API consistency in local timezone (not UTC)
-      const now = new Date();
-      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      // Get local date for API consistency
+      const localDate = new Date().toISOString().split('T')[0];
 
       // Check if streak was already updated today
       const today = new Date().toDateString();
@@ -365,7 +384,13 @@ function HomePage() {
       params.set('generations', activeGenerationsRef.current.join(','));
       params.set('t', Date.now().toString()); // Cache busting
       
-      const response = await fetch(`/api/random?${params}`);
+      const response = await fetch(`/api/random?${params}`, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
 
       if (!response.ok) throw new Error('Failed to fetch random pokemon');
 
@@ -429,7 +454,7 @@ function HomePage() {
     saveSelectedGenerations(generations);
     setSelectedGenerations(generations);
     
-    // Update our active generations reference immediately
+    // Update active generations ref immediately
     activeGenerationsRef.current = [...generations];
     
     // Clear any previous timer
